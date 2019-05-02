@@ -27,6 +27,8 @@ if(!require("pyramid")) install.packages("pyramid", repos="http://cran.us.r-proj
 library(pyramid)
 if(!require("pander")) install.packages("pander", repos="http://cran.us.r-project.org")
 library(pander)
+if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
+library(kableExtra)
 
 #############################################################################################
 
@@ -2589,3 +2591,170 @@ scale_color_manual(values=c("black","red")) +
 guides(fill=FALSE, color=FALSE) +
 theme_bw()
 }
+	
+	
+######## Fonctions Desc avec output HTML (nécessite kableExtra)
+
+# BINAIRE
+desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
+  name_html = paste0("<b>",name,"</b>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+  if( length(unique(na.omit( vector ))) <2 ) {
+    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>")
+    return( TRUE )
+  }
+  
+  vector <- as.numeric(vector) ;
+  if( sum(is.na(vector))==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+    vector <- vector[!is.na(vector)] ;
+  }
+  cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+  cat("------------------------------------------------------------------------------------<br>") ;
+  if( table ) {
+        temp <- as.data.frame(table(vector)) ;
+        modalites <- temp[,1]
+    df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    
+    
+    cat("\n<br>Calcul des IC95% à l'aide d'une loi binomiale\n<br>")
+  }
+  
+  pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
+}
+
+	
+# QUALI
+
+desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
+   name_html = paste0("<b>",name,"</b>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+    if( length(unique(na.omit( vector ))) <2 ) {
+        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
+        return( TRUE ) ;
+    }
+    if( sum(is.na(vector))==0) {
+        cat("Aucune valeur manquante.<br>") ;
+    } else {
+        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+        vector <- vector[!is.na(vector)] ;
+    }
+    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+    cat("------------------------------------------------------------------------------------<br>") ;
+    
+    temp <- as.data.frame(table(vector)) ;
+    modalites <- temp[,1] ;
+    if( sort=="alpha") {
+        modalites <- modalites[order(modalites)] ;
+    } else if( sort=="croissant") {
+        modalites <- modalites[order(temp[,2])] ;
+    } else if( sort=="decroissant") {
+        modalites <- modalites[order(0-temp[,2])] ;
+    }
+    # tableau de contingence
+    if( table ) {
+        
+           temp <- as.data.frame(table(vector)) ;
+        modalites <- temp[,1]
+    df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    }
+    
+        cat("\n<br>Calcul des IC95% à l'aide d'une loi binomiale\n<br>")
+    
+        
+    # graphique maintenant
+    par(mar=c(4, 10, 4, 2) + 0.1) ;
+    vector <- factor(vector, levels = modalites)
+    temp <- rev(prop.table(table(vector)))
+    id <- max(nrow(temp)-limit_chart+1,1):nrow(temp) ;
+    # la première modalité traçée est celle la plus proche du point (0,0), on inverse donc nos vecteurs
+    temp <- rev(temp[rev(id)])
+    modalites <- names(temp)
+    barplot(temp, horiz=TRUE, main=name, las=2, col="cornflowerblue", names.arg = substring(modalites, 1, tronque_lib_chart)) ;
+    par(mar=c(5, 4, 4, 2) + 0.1) ;
+}
+
+#QUANTI_DISC
+desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
+   name_html = paste0("<b>",name,"</b>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+    if( length(unique(na.omit( vector ))) <2 ) {
+        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
+        return( TRUE ) ;
+    }
+    
+    vector <- as.numeric(vector) ;
+    if( sum(is.na(vector))==0) {
+        cat("Aucune valeur manquante.<br>") ;
+    } else {
+        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+        vector <- vector[!is.na(vector)] ;
+    }
+    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+    cat("------------------------------------------------------------------------------------<br>") ;
+    if (Sum) {print (kable(rbind(as.matrix(summary(vector)), Sd = sd(vector) ))) } ;
+    
+    if( table ) {
+        temp <- as.data.frame(table(vector)) ;
+        modalites <- temp[,1] ;
+        if( sort=="alpha") {
+            modalites <- modalites[order(modalites)] ;
+        } else if( sort=="croissant") {
+            modalites <- modalites[order(temp[,2])] ;
+        } else if( sort=="decroissant") {
+            modalites <- modalites[order(0-temp[,2])] ;
+        }
+       # cat("\nLes calculs des IC95% sont réalisés à partir de la loi binomiale\n")
+        df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    
+    }
+    if( mean_ci ) {
+        sd <- sd(vector) ;
+        mean <- mean(vector) ;
+        n <- length(vector) ;
+        cat( "\n<br>Moyenne et intervalle de confiance à 95% :",  
+             round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"].<br>",
+             "Calcul des IC95% à partir du théorème central limite") ;
+    }
+    plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
+    
+}
+	
