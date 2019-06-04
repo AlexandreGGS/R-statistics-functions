@@ -2758,3 +2758,11 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
     
 }
 	
+	
+	
+	
+################### Copier un dataframe directement dans le clipboard pour colelr dans excel
+copy_excel <- function(df, sep="\t", dec=",", max.size=(200*1000)){
+    # Copy a data.frame to clipboard
+    write.table(df, paste0("clipboard-", formatC(max.size, format="f", digits=0)), sep=sep, row.names=FALSE, dec=dec)
+  }
