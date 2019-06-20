@@ -28,7 +28,9 @@ library(pyramid)
 if(!require("pander")) install.packages("pander", repos="http://cran.us.r-project.org")
 library(pander)
 if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
-library(kableExtra)
+# library(kableExtra)
+
+# kableExtra à utiliser si RMD en HTML
 
 #############################################################################################
 
