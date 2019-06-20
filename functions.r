@@ -27,7 +27,7 @@ if(!require("pyramid")) install.packages("pyramid", repos="http://cran.us.r-proj
 library(pyramid)
 if(!require("pander")) install.packages("pander", repos="http://cran.us.r-project.org")
 library(pander)
-if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
+#if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
 # library(kableExtra)
 
 # kableExtra à utiliser si RMD en HTML
@@ -1169,11 +1169,13 @@ bivarie_quali_quali <- function(x, y, xname="Variable qualitative 1", yname="Var
     }
     if (prop.table) {
         prop_table <-round(100*prop.table(table(y,x),2),2)  
-        tableau_perc <- kable(prop_table, caption=paste0("Proportions de y (", yname, ") par modalité de x"), row.names = T)
-        print(tableau_perc)
+        tableau_perc <- as.data.frame.matrix(prop_table)
+        cat(paste0("\nProportions de y (", yname, ") par modalité de x\n"))
+	    print(tableau_perc)
     }
     if (table) {
-        tableau_eff <- kable(table(y,x), caption="Tableau des effectifs", row.names = T)
+        tableau_eff <- as.data.frame.matrix(table(y,x))
+	    cat("\nTableau des effectifs\n")
         print(tableau_eff)
     }
     
