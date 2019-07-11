@@ -716,11 +716,15 @@ desc_quali <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_
     }
     # tableau de contingence
     if( table ) {
-        cat("\nModalite\tEffectif\tProportion\tIC95%\n") ;
+      maxcar = max(nchar(as.character(modalites)))
+        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tProportion\tIC95%\n") ;
         if ( tronque_lib_tab == 0 ) {
             for( une_modalite in modalites) {
                 temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;      
-                cat(une_modalite,"\t",table(vector)[une_modalite],"\t",temp[1],"\t[",temp[2],";",temp[3],"]\n") ;
+                cat(une_modalite, rep.int(" ",maxcar-nchar(une_modalite)),
+                    "\t",table(vector)[une_modalite],rep.int(" ",8-nchar(as.character(table(vector)[une_modalite]))),
+                    temp[1],rep.int(" ",10-nchar(as.character(temp[1]))),
+                    "[",temp[2],";",temp[3],"]\n") ;
             }
         } else {
             for( une_modalite in modalites[1:tronque_lib_tab]) {
@@ -1245,10 +1249,10 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
     cat("\n------------------------------------------------------------------------------------\n")
     cat("La p-value (petit p) de ce test = ",pval)
     cat("\n------------------------------------------------------------------------------------\n")
-    
+    maxcar = max(nchar(as.character(unique(x))),na.rm = T)
     if (method %in% c("student", "anova")) {
         cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite\tEffectif\tMoyenne\tIC95%\n", sep = "")
+        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMoyenne            IC95%\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1256,11 +1260,14 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             mean_quanti <- round(mean_quanti,2)
             low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            cat(une_modalite,"\t", n, "\t", mean_quanti,"\t[",low_bound,";",upp_bound,"]\n", sep = "")
+            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
+                "\t", n,rep.int(" ",8-nchar(as.character(n))),
+                 "\t", mean_quanti,rep.int(" ",10-nchar(as.character(mean_quanti))),
+                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
     } else if (method %in% c("wilcoxon", "kruskal")) {
         cat("\nMédianes avec intervalle inter-quartile pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite\tEffectif\tMédiane\tIQ\n", sep = "")
+        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMédiane            IQ\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1268,10 +1275,13 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             med_quanti <- round(med_quanti,2)
             low_bound <- round(quantile(y[x == quali], probs = 0.25, na.rm = TRUE), 2)
             upp_bound <- round(quantile(y[x == quali], probs = 0.75, na.rm = TRUE), 2)
-            cat(une_modalite,"\t", n, "\t", med_quanti,"\t[",low_bound,";",upp_bound,"]\n", sep = "")
+            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
+                "\t", n,rep.int(" ",8-nchar(as.character(n))),
+                 "\t", med_quanti,rep.int(" ",10-nchar(as.character(med_quanti))),
+                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
         cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite\tEffectif\tMoyenne\tIC95%\n", sep = "")
+        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMoyenne            IC95%\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1279,7 +1289,10 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             mean_quanti <- round(mean_quanti,2)
             low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            cat(une_modalite,"\t", n, "\t", mean_quanti,"\t[",low_bound,";",upp_bound,"]\n", sep = "")
+            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
+                "\t", n,rep.int(" ",8-nchar(as.character(n))),
+                 "\t", mean_quanti,rep.int(" ",10-nchar(as.character(mean_quanti))),
+                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
     }
     
@@ -1287,6 +1300,7 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
         boxplot(y~x, xlab=xname, ylab=yname, col="cornflowerblue", ...) ;
     }
 }
+
 
 ## Test bivarié t de student pour groupes appariés
 bivarie_quali_quanti_app <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", graph = TRUE, ...) {
