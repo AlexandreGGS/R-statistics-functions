@@ -717,7 +717,7 @@ desc_quali <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_
     # tableau de contingence
     if( table ) {
       maxcar = max(nchar(as.character(modalites)))
-        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tProportion\tIC95%\n") ;
+        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tProportion\tIC95%\n") ;
         if ( tronque_lib_tab == 0 ) {
             for( une_modalite in modalites) {
                 temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;      
@@ -1252,7 +1252,7 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
     maxcar = max(nchar(as.character(unique(x))),na.rm = T)
     if (method %in% c("student", "anova")) {
         cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMoyenne            IC95%\n", sep = "")
+        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMoyenne            IC95%\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1261,13 +1261,13 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",8-nchar(as.character(n))),
-                 "\t", mean_quanti,rep.int(" ",10-nchar(as.character(mean_quanti))),
+                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
+                 "\t", mean_quanti,rep.int(" ",abs(10-nchar(as.character(mean_quanti)))),
                  "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
     } else if (method %in% c("wilcoxon", "kruskal")) {
         cat("\nMédianes avec intervalle inter-quartile pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMédiane            IQ\n", sep = "")
+        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMédiane            IQ\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1276,12 +1276,12 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             low_bound <- round(quantile(y[x == quali], probs = 0.25, na.rm = TRUE), 2)
             upp_bound <- round(quantile(y[x == quali], probs = 0.75, na.rm = TRUE), 2)
             cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",8-nchar(as.character(n))),
-                 "\t", med_quanti,rep.int(" ",10-nchar(as.character(med_quanti))),
+                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
+                 "\t", med_quanti,rep.int(" ",abs(10-nchar(as.character(med_quanti)))),
                  "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
         cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",maxcar-8),"\tEffectif\tMoyenne            IC95%\n", sep = "")
+        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMoyenne            IC95%\n", sep = "")
         for (une_modalite in sort(unique(na.omit(x)))) {
             quali <- une_modalite
             n <- sum(!is.na(y[x == quali]))
@@ -1290,8 +1290,8 @@ bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Vari
             low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
             cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",8-nchar(as.character(n))),
-                 "\t", mean_quanti,rep.int(" ",10-nchar(as.character(mean_quanti))),
+                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
+                 "\t", mean_quanti,rep.int(" ",abs(10-nchar(as.character(mean_quanti)))),
                  "\t[",low_bound,";",upp_bound,"]\n", sep = "")
         }
     }
