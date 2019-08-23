@@ -1817,7 +1817,7 @@ cat("</div>")
 }
 
 #QUANTI_DISC
-desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
+desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
    name_html = paste0("<b>",name,"</b>")
   cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
@@ -1833,9 +1833,19 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
         cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
         vector <- vector[!is.na(vector)] ;
     }
-    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
-    cat("------------------------------------------------------------------------------------<br>") ;
-    if (Sum) {print (kable(rbind(as.matrix(summary(vector)), Sd = sd(vector) ))) } ;
+    cat("Effectif analysé:", length(na.omit(vector)),"<br>") ;
+    cat("------------------------------------------------------------------------------------<br></div>") ;
+    if (Sum) {vector_noNA = na.omit(vector)
+df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
+row.names(df) = c("Minimum",
+                  "1er quartile",
+                  "Médiane",
+                  "Moyenne",
+                  "3eme quartile",
+                  "Maximum",
+                  "Ecart type")
+names(df) = name
+print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))} ;
     
     if( table ) {
         temp <- as.data.frame(table(vector)) ;
@@ -1847,7 +1857,7 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
         } else if( sort=="decroissant") {
             modalites <- modalites[order(0-temp[,2])] ;
         }
-       # cat("\nLes calculs des IC95% sont réalisés à partir de la loi binomiale\n")
+       # cat("\nLes calculs des IC95% sont r�alis�s � partir de la loi binomiale\n")
         df_tmp = as.data.frame(modalites)
     for( une_modalite in modalites) {
       temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
@@ -1859,6 +1869,7 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
       df_tmp$IC[df_tmp$modalites == une_modalite] = IC
     }
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    cat("<br><b><center>Détail des modalités</center></b><br>")
     print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
     
     }
@@ -1866,12 +1877,56 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
         sd <- sd(vector) ;
         mean <- mean(vector) ;
         n <- length(vector) ;
-        cat( "\n<br>Moyenne et intervalle de confiance à 95% :",  
-             round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"].<br>",
-             "Calcul des IC95% à partir du théorème central limite</div>") ;
+        cat( "\n<br><div class = \"color\">>Moyenne et intervalle de confiance à 95% :",  
+             round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"]</div><br>")
     }
     plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
-    
+}
+		   
+		       
+# QUANTI_CONT
+desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
+    cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
+    if( length(unique(na.omit( vector ))) <2 ) {
+        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
+        return( TRUE ) ;
+    }
+    vector <- as.numeric(vector) ;
+    if( sum(is.na(vector))==0) {
+        cat("Aucune valeur manquante.<br>") ;
+    } else {
+        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+        vector <- vector[!is.na(vector)] ;
+    }
+    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+    cat("------------------------------------------------------------------------------------<br></div>") ;
+    vector_noNA = na.omit(vector)
+df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
+row.names(df) = c("Minimum",
+                  "1er quartile",
+                  "Médiane",
+                  "Moyenne",
+                  "3eme quartile",
+                  "Maximum",
+                  "Ecart type")
+names(df) = name
+print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    if( mean_ci ) {
+        sd <- sd(vector) ;
+        mean <- mean(vector) ;
+        n <- length(vector) ;
+        cat( "<br><div class = \"color\">>Moyenne et intervalle de confiance à ",100*(1-alpha),"% :",  
+             round(mean,2),"[",round(mean+qnorm(alpha/2)*sd/sqrt(n),2),";",round(mean+qnorm(1-alpha/2)*sd/sqrt(n),2),"]</div><br>")
+    }
+    if (graph) {
+        hist(vector, col="cornflowerblue", freq = FALSE, main = name, xlab = name, breaks = def_breaks, ylim = c(0,max(hist(vector, plot = F)$density, density(vector)$y)), ...)
+        if (density) {
+            lines(density(vector), col="red") ;
+        }
+    }
+    if (plot_boxplot) {
+        boxplot(vector, main = name, ylab = "")
+    }
 }
 	
 	
