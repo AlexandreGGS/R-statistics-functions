@@ -24,6 +24,11 @@ library(tidyverse)
 # library(kableExtra)
 
 # kableExtra à utiliser si RMD en HTML
+# BALISE à ajouter dans un fichier RMD
+#<style>
+#div.color { background-color:#ebf2f9;
+#font-family: Verdana;}
+#</style>
 
 #############################################################################################
 
