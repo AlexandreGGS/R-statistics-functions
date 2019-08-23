@@ -2,23 +2,14 @@ if(!require("knitr")) install.packages("knitr", repos="http://cran.us.r-project.
 library(knitr)
 if(!require("broman")) install.packages("broman", repos="http://cran.us.r-project.org") ;
 library(broman)   # utiliser myround(nombre)
-opts_chunk$set(fig.width=6, fig.height=4, fig.path='figs/', warning=FALSE, message=FALSE, 
-               echo=TRUE, warning=FALSE)
-set.seed(53079239)
 if(!require("qtl")) install.packages("qtl", repos="http://cran.us.r-project.org")
 library(qtl) ;
-if(!require("dplyr")) install.packages("dplyr", repos="http://cran.us.r-project.org") ;
-library(dplyr) ;
 if(!require("devtools")) install.packages("devtools", repos="http://cran.us.r-project.org")
 library(devtools) ;
 if (!require("DT")) devtools::install_github("rstudio/DT")
 library(DT) ;
 if(!require("survival")) install.packages("survival", repos="http://cran.us.r-project.org")
 library(survival) ;
-if(!require("ggplot2")) install.packages("ggplot2", repos="http://cran.us.r-project.org")
-library(ggplot2)
-#if(!require("rgeos")) install.packages("rgeos", repos="http://cran.us.r-project.org")
-#library(rgeos)
 if(!require("readxl")) install.packages("readxl", repos="http://cran.us.r-project.org")
 library(readxl)
 if(!require("lubridate")) install.packages("lubridate", repos="http://cran.us.r-project.org")
@@ -27,6 +18,8 @@ if(!require("pyramid")) install.packages("pyramid", repos="http://cran.us.r-proj
 library(pyramid)
 if(!require("pander")) install.packages("pander", repos="http://cran.us.r-project.org")
 library(pander)
+if(!require("tidyverse")) install.packages("tidyverse", repos="http://cran.us.r-project.org")
+library(tidyverse)
 #if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
 # library(kableExtra)
 
@@ -176,288 +169,6 @@ normPlot <- function(vecteur, etiquette, ...) {
 }
 
 
-# insert un saut de ligne dans une
-saut_ligne <- function(chaine, limit = 30) {
-    
-}
-
-
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-# DATA MANAGEMENT
-
-# terminologie : on gère :
-# - pour l'ATIH, "grandes" terminologies : cim10, ccam, ghm, rghm (racines de ghm), cmd, ucd, lpp
-# - pour l'ATIH, "petites" terminologies : atih_mode_entree, atih_mode_sortie, atih_prov, atih_dest,  atih_auto_um
-# - pour l'ATIH : finess (utilisé de manière simplifiée)
-# - autres : departement
-# paste : si TRUE, dans le résultat on accole le code, un espace, et le libellé. Si FALSE, renvoit le libellé tout seul.
-ajoute_libelle <- function(vector, terminologie="rien", paste=TRUE) {
-    
-    # on charge les terminologies complémentaires
-    if(terminologie %in% c("cim10", "ccam", "ghm", "rghm", "cmd", "ucd", "ucd_dci", "lpp")) {
-        charge_ressource("atih_termino_all") ;
-        ajoute_libelle <- TRUE ;
-    } else if(terminologie %in% c("atih_mode_entree", "atih_mode_sortie", "atih_prov", "atih_dest",  "atih_auto_um")) {
-        charge_ressource("atih_terminologie_pmsi_mco") ;
-        ajoute_libelle <- TRUE ;
-    } else if(terminologie == "departement") {
-        charge_ressource("insee_noms_departements") ;
-        ajoute_libelle <- TRUE ;
-    } else if(terminologie %in% c("finess", "status","secteur")) {
-        charge_ressource("atih_identifiants_etablissements")
-        ajoute_libelle <- TRUE ;
-    } else {
-        ajoute_libelle <- FALSE ;
-    }
-    
-    # on ajoute libelle
-    if(terminologie == "cim10") {
-        libelle <- atih_terminologie_cim10[vector,mult="first",libelle] ;
-    } else if(terminologie == "ccam") {
-        libelle <- atih_terminologie_ccam[vector,mult="first",libelle] ;
-    } else if(terminologie == "ghm") {
-        libelle <- atih_terminologie_ghm[vector,mult="first",libelle] ;
-    } else if(terminologie == "rghm") {
-        libelle <- atih_terminologie_rghm[vector,mult="first",libelle] ;
-    } else if(terminologie == "cmd") {
-        libelle <- atih_terminologie_cmd[vector,mult="first",libelle] ;
-    } else if(terminologie == "ucd") {
-        libelle <- atih_terminologie_ucd[vector,mult="first",libelle] ;
-    } else if(terminologie == "ucd_dci") {
-        libelle <- atih_terminologie_ucd_dci[vector,mult="first",libelle] ;
-    } else if(terminologie == "lpp") {
-        libelle <- atih_terminologie_lpp[vector,mult="first",libelle] ;
-    } else if(terminologie == "atih_mode_entree") {
-        libelle <- atih_terminologie_pmsi_mco[list("entree_mode",vector),mult="first",libelle] ;
-    } else if(terminologie == "atih_mode_sortie") {
-        libelle <- atih_terminologie_pmsi_mco[list("sortie_mode",vector),mult="first",libelle] ;
-    } else if(terminologie == "atih_prov") {
-        libelle <- atih_terminologie_pmsi_mco[list("entree_prov",vector),mult="first",libelle] ;
-    } else if(terminologie == "atih_dest") {
-        libelle <- atih_terminologie_pmsi_mco[list("sortie_destination",vector),mult="first",libelle] ;
-    } else if(terminologie == "atih_auto_um") {
-        libelle <- atih_terminologie_pmsi_mco[list("autoum",vector),mult="last",libelle] ;
-    } else if(terminologie == "departement") {
-        libelle <- insee_noms_departements[vector,mult="first",libelle] ;
-    } else if(terminologie == "finess") {
-        libelle <- atih_identifiants_etablissements[vector,mult="last",raison_sociale] ;
-    } else if(terminologie == "status") {
-        libelle <- atih_identifiants_etablissements[vector,mult="last",status] ;
-    } else if(terminologie == "secteur") {
-        libelle <- atih_identifiants_etablissements[vector,mult="last",secteur] ;
-    }
-    if( paste ) {
-        return(paste(vector, libelle)) ;
-    } else {
-        return(libelle) ;
-    }
-}
-# Cette fonction prend un vecteur de variable qualitative multivaluée, et retourne un dataframe 
-# d'autant de lignes, avec une variable binaire par modalité initiale.
-# seules les modalités listées dans "values" seront traitées, les autres seront ignorées (la fonction ne crée pas une modalité "autres" par exemple)
-# "newnames" doit préciser les noms des nouvelles variables binaires.
-# Sinon, "newnames" peut préciser un préfixe (valeur unique), auquel on ajoutera "_" puis le nom de chaque modalité.
-# Une valeur initiale "NA" donne autant de "0" (et non "NA") dans les variables binaires.
-split_quali_multi <- function(vector, values, newnames="variable_quali", separateur="_") {
-  if(newnames == "") {
-    newnames <- as.character(values)
-  }
-    if(length(newnames)==1 | length(newnames) != length(values) ) {
-        newnames <- paste(newnames, values, sep=separateur) ;    
-    }
-    values <- as.character(values) ;
-    vector <- as.character(vector) ;
-    if( sum(is.na(vector))>0) {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        cat("On considèrera que la réponse est valide et vaut toujours non. Ces enregistrement ne sont pas exclus.\n") ;
-        vector[is.na(vector)] <- "" ;
-    }
-    new_df <- NULL ;
-    for( i in 1:length(values)) {
-        une_modalite <- values[i] ;
-        nom_variable <- newnames[i] ;
-        binaire <- as.numeric(regexpr(une_modalite,vector, ignore.case=TRUE, perl=FALSE)>-1) ;
-        if( is.null(new_df)) {
-            new_df <- as.data.frame(binaire);
-            names(new_df) <- nom_variable ;
-        } else {
-            old_names <- names(new_df) ;
-            if( nom_variable %in% names(new_df)  ) {
-                binaire <- binaire + new_df[nom_variable] ;
-                binaire <- as.numeric(binaire>0) ;
-                new_df[nom_variable] <- binaire ;
-            } else {
-                new_df <- cbind(new_df, binaire) ;
-                names(new_df) <- c(old_names, nom_variable) ;
-            }
-        }
-    }
-    return(new_df) ;
-}
-
-# Fonction permettant à partir d'un dataframe avec des modalités en colonnes, de sortir un vecteur conservant la modalité qui nous intéresse pour chaque ligne
-# -- dataframe = input (tableau binaire avec les modalités en colonnes)
-# -- sorted_modalities = vecteur comprenant les modalités triées (nom complet correspondant aux colonnes du df)
-# -- new_modalities = vecteur comprenant les modalités triées (format de sortie)
-aggregate_w_priority <- function(dataframe, sorted_modalities, new_modalities,  empty_as_na=FALSE) {
-    new_vector <- rep("", nrow(dataframe)) ;
-    for( i in length(sorted_modalities):1 ) {
-        a_modality <- sorted_modalities[i]
-        a_new_name <- new_modalities[i]
-        new_vector[which(dataframe[,a_modality]==1)] <- a_new_name ;
-    }
-    if(empty_as_na) {
-        new_vector[which(new_vector=="")] <- NA ;
-    }
-    return( new_vector) ;
-}
-
-
-
-# Fonction permettant d'effectuer les regroupements de codes à partir d'un fichier csv structuré en 2 colonnes (codes, regroupement)  
-# L'argument variable_a_regrouper est un vecteur qui contient les codes à regrouper
-# 
-# L'argument chemin_fichier correspond au chemin du fichier .csv (separateur ;) 
-# Le tableau doit au minimum contenir deux variables : "code" et "regroupement". La première contient la liste des codes et la seconde le nom du regroupement correspondant
-# 
-# L'argument v_a_r_multivalue indique si la variable à regrouper est multivaluée ou non
-# Si oui, la sortie sera un dataframe de variables binaires ou un vecteur (parametre output = "df"/"vector"))
-# Si non, la sortie sera un vecteur d'une variable qualitative à plusieurs modalitées
-# MAJ : ajout d'une 3e colonne priority dans le tableau. Ainsi qu'un argument priority = T/F permettant de gérer les priorités de regroupement lorsque l'on travaille avec une 
-# exact : Si TRUE, renvoie TRUE uniquement si variable_a_regrouper match exactement avec code. Si FALSE, renvoie TRUE également si variable_a_regrouper contient code.
-regroupement_modalite <- function(variable_a_regrouper, chemin_fichier, v_a_r_multivalue = TRUE, output = "df", priority=F, exact = F, split_char = ";") {
-    
-    regroupements <- read.csv2(chemin_fichier, stringsAsFactors = FALSE)
-    
-    if (!v_a_r_multivalue | output=="vector") {
-        data_return <- rep(NA, length(variable_a_regrouper))
-    } else {
-        list_var <- unique(regroupements$regroupement)
-        data_return <- as.data.frame(matrix(data = NA, 
-                                            nrow = length(variable_a_regrouper), 
-                                            ncol = length(list_var), 
-                                            dimnames = list(NULL, list_var)))
-    }
-    
-    stopifnot(c("code","regroupement") %in% names(regroupements))
-    
-    # Recodage des modalités NA en autres
-    regroupements$regroupement[is.na(regroupements$regroupement)] <- "Autres"
-    
-    # Priorisation des modalités
-    if (!"priority" %in% names(regroupements)) {
-        regroupements$priority <- 1
-    }  
-    
-    temp <- aggregate(priority~regroupement, data = regroupements, FUN = min)
-    list_mod <- temp[order(temp$priority, decreasing = T), "regroupement"]    
-    if (v_a_r_multivalue) {
-        variable_a_regrouper <- strsplit(variable_a_regrouper, split = split_char, fixed = T)
-    }
-    
-    for (i in list_mod) {
-        list_a_matcher <- regroupements$code[regroupements$regroupement == i]
-        
-        if (!exact) {
-            list_a_matcher <- paste0("(", paste(list_a_matcher, collapse = ")|("), ")", collapse = "")
-        }
-        
-        if (v_a_r_multivalue & output == "df") {
-            if (exact) {
-                temp_return <- lapply(variable_a_regrouper, function(x) x %in% list_a_matcher)
-                temp_return <- lapply(temp_return, sum) > 0
-                data_return[,i] <- temp_return
-            } else {
-                data_return[,i] <- grepl(list_a_matcher, variable_a_regrouper)
-            }
-            
-        } else {
-            if (exact) {
-                if (v_a_r_multivalue & output == "vector") {
-                    temp_return <- lapply(variable_a_regrouper, function(x) x %in% list_a_matcher)
-                    temp_return <- lapply(temp_return, sum) > 0
-                } else {
-                    temp_return <- variable_a_regrouper %in% list_a_matcher
-                }
-            } else {
-                temp_return <- grepl(list_a_matcher, variable_a_regrouper)
-            }
-            data_return[temp_return] <- i
-        }
-    }
-    data_return[data_return == FALSE] <- 0
-    data_return[data_return == TRUE] <- 1
-    return(data_return)
-}
-
-
-#' @title Trouve department
-#' @description Retourne le numéro de département, depuis un numéro de département, un code géographique ATIH, un code postal, ou un numéro FINESS
-#' @param codegeo character A character vector with codegeo codes. 
-#' @param type character Préciser ici le type de départ : cp, codegeo_atih, finess sont gérés à ce jour. A étendre si besoin. Tout autre valeur => non-modification du code.
-#' @return A \code{character} vector with INSEE's department code.
-#' @references 
-#' \enumerate{
-#'      \item \href{http://www.atih.sante.fr/mise-jour-2014-de-la-liste-de-correspondance-codes-postaux-codes-geographiques}{ATIH codegeo}
-#'      \item \href{http://www.insee.fr/fr/methodes/nomenclatures/cog/telechargement/2014/txt/depts2014.txt}{INSEE's department codes}
-#' }
-
-trouve_departement <- function(geocode, type="departement") {
-    if( ! "character" %in% class(geocode) ) geocode <- as.character(geocode) ;
-    
-    if( type=="finess") {
-        
-        nb_long_irreg <- sum(nchar(geocode)!=9 & nchar(geocode)!=8) ;
-        if(nb_long_irreg>0) {
-            cat("Attention,",nb_long_irreg,"codes ne faisaient pas 9 caractères (malgré l'ajout de zéros initiaux). Le résultat ci-dessous n'est pas garanti.\n") ;
-        }
-        selecteur <- which(nchar(geocode)==8) ;
-        geocode[selecteur] <- paste("0",geocode[selecteur], sep="" ) ;
-        dept <- substr(geocode, 1, 2) ;
-        
-        # Traitement spécial pour les DOM (dépt=97)
-        dom <- dept == "97" 
-        dept[dom] <- paste0(dept[dom], substr(geocode[dom], 4, 4))
-        # traitement spécial pour Mayotte
-        dept[dept == "98"] <- "976" ;
-        
-    } else if( type=="codegeo_atih" | type=="cp") {
-        
-        nb_long_irreg <- sum(nchar(geocode)!=5 & nchar(geocode)!=4) ;
-        if(nb_long_irreg>0) {
-            cat("Attention,",nb_long_irreg,"codes ne faisaient pas 5 caractères (malgré l'ajout de zéros initiaux). Le résultat ci-dessous n'est pas garanti.\n") ;
-        }
-        selecteur <- which(nchar(geocode)==4) ;
-        geocode[selecteur] <- paste("0",geocode[selecteur], sep="" ) ;
-        dept <- substr(geocode, 1, 2) ;
-        
-        # substitution des DOM
-        dom_correspondance <- c("971"="9A", "972"="9B", "973"="9C", "974"="9D", "975"="9E", "976"="9F" ) ;
-        for(i in seq_len(length(dom_correspondance))) {
-            dept[dept == dom_correspondance[i]] <- names(dom_correspondance)[i] ;
-        }
-        # substitution des TOM
-        tom <- paste0("9", LETTERS[7:26]) ;
-        dept[dept %in% tom] <- "98" ;
-        # Code 99 for foreign countries
-        
-    } else {
-        
-        # depuis un numéro de département... à vérifier a minima
-        nb_long_irreg <- sum(nchar(geocode)!=1 & nchar(geocode)!=2) ;
-        if(nb_long_irreg>0) {
-            cat("Attention,",nb_long_irreg,"codes ne faisaient pas 2 caractères (malgré l'ajout de zéros initiaux). Le résultat ci-dessous n'est pas garanti.\n") ;
-        }
-        selecteur <- which(nchar(geocode)==1) ;
-        geocode[selecteur] <- paste("0",geocode[selecteur], sep="" ) ;
-        dept <- substr(geocode, 1, 3) ; # on laisse 3 à cause des DOM TOM
-        
-    }
-    return(dept)
-}
 
 
 # Fonctions qui enleve les valeurs extremes qui peuvent poser problèmes pour les fonctions graphiques
@@ -958,7 +669,7 @@ reg_log_graphe_or <- function(obj_reglog, main="Logistic regression", xlab="Odds
     graphe_ratio(label=label, nb=prop, nb_ib=prop_ib, nb_sb=prop_sb, xlim=xlim, main=main, xlab=xlab, ref=1, signif=signif, log=TRUE) ;
 }
 
-## Fonction pour vérifier la loglinéarité des variables (Coralie Delettrez)
+## Fonction pour vérifier la loglinéarité des variables
 reg_log_verif_loglineaire <- function(x, y, xname="Variable quantitative", yname="Variable binomiale (var à expliquer du modele de reglog)", titre="titre") {
     y <- as.numeric(as.character(y))
     propll <- aggregate(y,list(x),mean,na.rm=TRUE)
@@ -1012,7 +723,7 @@ reg_log_validation <- function(mod, desc_eve = T, roc = T, calib = T, quant.hosl
     }
 }
 
-##### Regression logistique avec selection de variable (imputation multiple sur les NA) (Coralie Delettrez)
+##### Regression logistique avec selection de variable (imputation multiple sur les NA) 
 # y est la variable à expliquer
 # vecteur correspond aux variables à expliquer "c("var_1","var_2",...,"var_n")
 # La selection de variable se fait en backward
@@ -1926,620 +1637,6 @@ arbre_decision_description <- function(obj_rpart, main="Arbre de décision") {
 
 
 
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-# CARTOGRAPHIE
-
-## CARTO (alex georges)
-
-carte_de_france <- function(departements, name="Nombre par département") {
-    
-    if(!require("maptools")) install.packages("maptools", repos="http://cran.us.r-project.org") ;
-    library(maptools) ;
-    if(!require("RColorBrewer")) install.packages("RColorBrewer", repos="http://cran.us.r-project.org") ;
-    library(RColorBrewer) ;
-    if(!require("classInt")) install.packages("classInt", repos="http://cran.us.r-project.org") ;
-    library(classInt) ;
-    if(!require("rgeos")) install.packages("rgeos", repos="http://cran.us.r-project.org") ;
-    library(rgeos) ;
-    
-    map_france <- readShapeSpatial("geofla/DEPARTEMENT/DEPARTEMENT.SHP")
-    
-    dpt <- as.data.frame(table(departements))
-    names(dpt) <- c("dpt","nombre")
-    #Jointure entre le fond de carte et les données
-    #map_france@data <- merge(map_france@data, dpt, by.x="CODE_DEPT", by.y="dpt", all.x=TRUE) ### BUG
-    map_france@data <- data.frame(map_france@data, dpt[match(map_france@data[,"CODE_DEPT"], dpt[,"dpt"]),])
-    
-    #choix du nombre de couleurs/classes
-    nclr <- 6
-    #palette clr
-    plotclr <- brewer.pal(nclr, "Greys")
-    #discrétisation 
-    distr <- classIntervals(map_france$nombre,nclr,style="quantile")$brks
-    
-    #attribution des couleurs aux régions
-    colMap <- plotclr[(findInterval(map_france$nombre,distr,all.inside=TRUE))]
-    #Affichage de la carte
-    plot(map_france, col=colMap)
-    #affichage de la légende
-    legend("bottomleft", legend=myLeg(distr,2), fill = plotclr, cex = 0.6, bty = "n")
-    #Titre
-    title(main=name)  
-}
-
-## Fonction pour légender (arrondir les classes) sur la fonction de cartographie
-myLeg <- function (vec, arrond) {  
-    x <- vec  
-    lx <- length(x)  
-    if (lx < 3)    
-        stop("pas suffisamment de classes")  
-    res <- character(lx - 1)  
-    res  
-    for (i in 1:(lx - 1))    
-    {res[i] <- paste(round(x[i],arrond), round(x[i + 1],arrond),sep=" - ")
-    }  
-    res  
-}
-
-
-
-## Fonction standardisation (Thibaut B) (Work in progress)
-
-standardisation <- function(pop_etude, periode, pop_ref="france_entiere", sexe = T, age = T, departement = T, type = "directe") {
-    
-    stopifnot(is.data.frame(pop_etude), is.logical(sexe), is.logical(age))
-    
-    if (pop_ref == "france_entiere") {
-        load("ressources/insee_population.RData")
-    } else if (pop_ref == "france") {
-        load("ressources/insee_population.RData", envir=globalenv() )
-        insee_population <- insee_population[!insee_population$departement %in% c("971", "972", "973", "974", "975", "976"),]
-    } else if (pop_ref == "monde") {
-        
-    } else {
-        stopifnot(is.data.frame(pop_ref))
-    }
-    
-    list_departement <- unique(pop_etude$departement)
-    # Controles et listing des variables + exclusion des départements qui ne sont pas présents dans pop_etude
-    list_var_join <- character()
-    if (age) {
-        list_var_join <- c(list_var_join, "age_num")
-        stopifnot(sum(grepl(pattern = "age", names(pop_etude))) == 1)
-    }
-    if (sexe) {
-        list_var_join <- c(list_var_join, "sexe")
-        stopifnot(sum(grepl(pattern = "sexe", names(pop_etude))) == 1)
-        insee_population <- insee_population[insee_population$sexe != "ensemble",]
-    }
-    if (departement) {
-        list_var_join <- c(list_var_join, "departement")
-        stopifnot(sum(grepl(pattern = "departement", names(pop_etude))) == 1)
-    }
-    stopifnot(length(!names(pop_etude) %in% list_var_join)>1)
-    names(pop_etude)[!names(pop_etude) %in% list_var_join] <- "var"
-    
-    # filtre sur la période
-    insee_population <- insee_population[insee_population$annee %in% periode,]
-    population_ref_totale <- sum(insee_population$population[insee_population$departement %in% unique(pop_etude$departement)], na.rm = T) / length(periode)
-    
-    if (length(periode)>1) {
-        insee_population <- aggregate(formula = population~age_num+departement+sexe , FUN = sum ,data = insee_population)
-    } else {
-        insee_population <- aggregate(formula = population~age_num+departement+sexe , FUN = sum ,data = insee_population)
-    }
-    
-    # Jointure des deux tables
-    if (is.null(list_var_join)) {
-        warning("Pas de standardisation demandée !")
-    } else {
-        temp_pop_etude <- merge(x = pop_etude, y = insee_population, by = list_var_join, all = F, all.y = T, sort = F)
-        temp_pop_etude$var[is.na(temp_pop_etude$var)] <- 0
-    }
-    
-    # Calcul des taux bruts
-    temp_pop_etude$tx_brut <- temp_pop_etude$var / temp_pop_etude$population
-    
-    # Calcul des taux standardisés
-    if (type == "directe") {
-        temp_pop_ref <- aggregate(population~sexe+age_num, data= insee_population, FUN = sum)
-        names(temp_pop_ref) <- c("sexe" ,"age_num", "pop_ref")
-        temp_pop_ref$pop_ref <- temp_pop_ref$pop_ref/length(periode)
-        temp_result <- merge(temp_pop_etude, temp_pop_ref, by = c("sexe", "age_num"), all.x = T, sort = F)
-        temp_result$nb_theorique <- temp_result$tx_brut * temp_result$pop_ref
-        
-        temp_result_ts <- aggregate(nb_theorique~departement, data = temp_result, FUN = sum)
-        temp_result_ts$tx_std <- temp_result_ts$nb_theorique/population_ref_totale
-        
-    } else if (type == "indirecte") {
-        
-    }
-    
-    return(list(taux_stand = temp_result_ts[temp_result_ts$departement %in% list_departement,c("departement", "tx_std")], taux_bruts = temp_result[temp_result$departement %in% list_departement,]))
-}
-
-
-
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-# DATA VISUALISATION
-
-# fonction de réalisation de graphs avant-après
-before_after <- function(x, y, xtxt, ytxt) {
-    par(pin=c(1.5,4)) # 1,5 x 4 pouces 
-    plot(
-        rep(1,NROW(x)),
-        x,
-        type="n",
-        xlim = c(1,2),
-        ylim = range(x,y), # Affichage y du plus petit au plus grand x ou y 
-        xlab = xtxt, # Etiquette x 
-        ylab = ytxt,
-        axes = F 
-    )
-    points(
-        rep(2,NROW(y)),
-        y,
-        type="n"
-    )
-    axis(2)
-    axis(1,labels = c("Avant","Après"), at = 1:2)
-    segments(rep(1,NROW(x)), x, rep(2,NROW(y)), y, lty=1, lwd=1, col="blue")
-    segments(rep(1,1), c(median(x)), rep(2,1), c(median(y)), lty=2, lwd=2, col="black")
-}
-
-
-
-
-
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-# AUTRES
-
-# Cette fonction est utilisée pour sauvegarder sur disque et charger en mémoire certaines ressources, comme les départements ou libellés CIM10 
-# MAJ : 24/10/2016 Ajout de la population INSEE de 2006 à 2014 (mettre à jour la période en fonction de la diffusion des données sur le site)
-charge_ressource <- function(ressource) {
-    if(!require("data.table")) install.packages("data.table", repos="http://cran.us.r-project.org") ;
-    library(data.table) ;
-    
-    if( ressource=="insee_noms_departements") {
-        
-        # source_dept <- "http://www.insee.fr/fr/methodes/nomenclatures/cog/telechargement/2015/txt/depts2015.txt" ;
-        fichier  <- file.path("ressources", "insee_noms_departements.txt") ;
-        fichier2  <- file.path("ressources", "insee_noms_departements.RData") ;
-        if (!file.exists(fichier2) ) {
-            nomenclature_dept <- fread(input=fichier, colClasses = "character", sep="\t", header=TRUE) ;
-            setnames(nomenclature_dept,"DEP","code") ;
-            setnames(nomenclature_dept,"NCCENR","libelle") ;
-            nomenclature_dept <- nomenclature_dept[,list(code,libelle)]
-            setkey(x=nomenclature_dept, code) ;
-            insee_noms_departements <<- nomenclature_dept
-            save(insee_noms_departements, file=fichier2 ) ;
-        } else if( !exists("insee_noms_departements")) {
-            load(file=fichier2, envir=globalenv() ) ;
-        }
-        # ***********************************************************************
-        
-    } else if( ressource=="insee_population") {
-        
-        # source_dept <- "http://www.insee.fr/fr/methodes/nomenclatures/cog/telechargement/2015/txt/depts2015.txt" ;
-        lien <- "http://www.insee.fr/fr/themes/tableau_local_tsv.asp?ref_id=POP1B&nivgeo=DEP&codgeo=01&millesime=2013&niveau=2"
-        fichier  <- file.path("ressources", "insee_population.RData") ;
-        if (!file.exists(fichier) ) {
-            
-            if (!dir.exists(file.path("ressources", "Insee"))) dir.create(file.path("ressources", "Insee"))
-            # Telechargements des fichiers population
-            for (i in 2006:2014) {
-                lien_temp <- sub(pattern = "(&millesime=)[0-9]{4}", replacement = paste0("\\1", i), x = lien)
-                for (j in c(01:19, 21:95, "2A", "2B", "971", "972", "973", "974")) {
-                    if (nchar(j)==1) j=paste0("0",j)
-                    lien_temp <- sub(pattern = "(&codgeo=)[0-9]{1,3}[A-B]?", replacement = paste0("\\1", j), x = lien_temp)
-                    nom_fichier <- paste("POP1B", i, j, sep = "_")
-                    print(nom_fichier)
-                    print(lien_temp)
-                    download.file(lien_temp, destfile =  file.path("ressources", "Insee", paste0(nom_fichier, ".csv")), quiet = T)
-                }
-            }
-            # fusion des fichiers
-            for (i in list.files(chemin, pattern = ".csv$")) {
-                nom_objet <- sub(pattern = ".csv", replacement = "", i)
-                temp_obj <- scan(file = file.path(chemin, i), what = "character", sep = "\r", skip = 10)
-                temp_obj <- read.table(text = temp_obj, header = F, stringsAsFactors = F, sep = "\t", nrows = 101, blank.lines.skip = T, fill = T)
-                temp_obj <- temp_obj[,-5]
-                names(temp_obj) <- c("age", "hommes", "femmes", "ensemble")
-                assign(x = nom_objet, value = temp_obj)
-            }
-            
-            insee_population <- data.frame()
-            for (i in ls(pattern = "POP1B")) {
-                temp_annee <- sub(pattern = ".+?_([0-9]{4})_.+", replacement = "\\1", i)
-                temp_departement <- sub(pattern = ".+?_([0-9]{1,3}[A-B]?)$", replacement = "\\1", i)
-                
-                temp_obj <- get(i)
-                temp_obj <- cbind(annee = rep(temp_annee, nrow(temp_obj)),
-                                  departement = as.character(rep(temp_departement, nrow(temp_obj))),
-                                  temp_obj)
-                
-                insee_population <- rbind(insee_population, temp_obj)
-            }
-            
-            insee_population$age_num <- 0
-            insee_population$age_num[nchar(insee_population$age) %in% 4:5] <- substring(insee_population$age[nchar(insee_population$age) %in% 4:5], 1, 1)
-            insee_population$age_num[nchar(insee_population$age) == 6] <- substring(insee_population$age[nchar(insee_population$age) == 6], 1, 2)
-            insee_population$age_num[nchar(insee_population$age) == 12 ] <- 0
-            insee_population$age_num[nchar(insee_population$age) == 15] <- substring(insee_population$age[nchar(insee_population$age) == 15], 1, 3)
-            
-            insee_population$age_num <- as.integer(insee_population$age_num)
-            insee_population$annee <- as.integer(insee_population$annee)
-            
-            insee_population <- reshape(insee_population, varying = c("hommes", "femmes", "ensemble"), v.names = "population", direction = "long", times = c("hommes", "femmes", "ensemble"), timevar = "sexe")
-            row.names(insee_population) <- 1:nrow(insee_population)
-            insee_population <- insee_population[,-7]
-            
-            setkey(x=as.data.table(insee_population), departement, age_num, sexe) ;
-            insee_population <<- insee_population
-            save(insee_population, file=fichier ) ;
-        } 
-        if( !exists("insee_population")) {
-            load(file=fichier, envir=globalenv() ) ;
-        }
-        # ***********************************************************************
-        
-    }else if( ressource=="ign_fonds_cartes"  ) {
-        
-        if(!require("maptools")) install.packages("maptools", repos="http://cran.us.r-project.org") ;
-        library(maptools) ;
-        gpclibPermit() ; # pour débloquer certaines fonctionnalités
-        
-        fichier2  <- file.path("ressources", "ign_fonds_cartes.RData") ;
-        if ( !file.exists(fichier2) ) {
-            map_france_metropolitaine <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_LAMB93_FR-ED141_DEPARTEMENT") # métropole
-            map_guadeloupe            <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_UTM20W84GUAD_D971-ED141_DEPARTEMENT") #971
-            map_martinique            <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_UTM20W84MART_D972-ED141_DEPARTEMENT") #972
-            map_guyane                <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_UTM22RGFG95_D973-ED141_DEPARTEMENT") # 973
-            map_reunion               <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_RGR92UTM40S_D974-ED141_DEPARTEMENT") #974
-            map_mayotte               <<- readShapeSpatial("./ressources/ign_fonds_cartes/GEOFLA_2-0_SHP_RGM04UTM38S_D976-ED141_DEPARTEMENT") #98
-            # il manque 975=Saint Pierre et Miquelon
-            save(map_france_metropolitaine, map_guadeloupe, map_martinique, map_guyane, map_reunion, map_mayotte, file=fichier2) ;
-        } else if( !exists("map_france_metropolitaine")) {
-            load(file=fichier2, envir=globalenv() ) ;
-        }
-        # ***********************************************************************
-        
-    } else if( ressource=="ign_geofla_communes"  ) {
-        
-        if(!require("maptools")) install.packages("maptools", repos="http://cran.us.r-project.org") ;
-        library(maptools) ;
-        gpclibPermit() ; # pour débloquer certaines fonctionnalités
-        
-        fichier2  <- file.path("ressources", "ign_geofla_communes.RData") ;
-        if ( !file.exists(fichier2) ) {
-            map_com_france_metropolitaine <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_LAMB93_FXX_2015-12-01") # métropole
-            map_com_guadeloupe            <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_UTM20W84GUAD_D971_2015-12-01") #971
-            map_com_martinique            <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_UTM20W84MART_D972_2015-12-01") #972
-            map_com_guyane                <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_UTM22RGFG95_D973_2015-12-01") # 973
-            map_com_reunion               <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_RGR92UTM40S_D974_2015-12-01") #974
-            map_com_mayotte               <<- readShapeSpatial("./ressources/ign_fonds_carte/GEOFLA_2-1_COMMUNE_SHP_RGM04UTM38S_D976_2015-12-01") #98
-            # il manque 975=Saint Pierre et Miquelon
-            save(map_com_france_metropolitaine, map_com_guadeloupe, map_com_martinique, map_com_guyane, map_com_reunion, map_com_mayotte, file=fichier2) ;
-            
-        } else if( !exists("map_dep_france_metropolitaine")) {
-            load(file=fichier2, envir=globalenv() ) ;
-        }
-        # ***********************************************************************
-        
-    } else if( ressource=="atih_terminologie_pmsi_mco"  ) {
-        
-        # il faudra encore faire import_CIM10, et créer de même les termino CCAM UCD et LPP.
-        
-        # fichier à encoder en ANSI
-        fichier1 <- "ressources/atih_terminologie_pmsi_mco.csv" ;
-        fichier2 <- "ressources/atih_terminologie_pmsi_mco.RData" ;
-        if ( !file.exists(fichier2) ) {
-            nomenclature_pmsi_mco <- fread(input=fichier1, colClasses = "character", sep=";") ;
-            setkey(x=nomenclature_pmsi_mco, variable, valeur) ;
-            atih_terminologie_pmsi_mco <<- nomenclature_pmsi_mco ;
-            save( atih_terminologie_pmsi_mco, file = fichier2 ) ;
-        } else if( !exists("atih_terminologie_pmsi_mco")) {
-            load(file=fichier2, envir=globalenv() ) ;
-        }
-        # ***********************************************************************
-        
-    } else if( ressource=="atih_identifiants_etablissements") {
-        
-        fichier2 <- "ressources/atih_identifiants_etablissements.RData" ;
-        if ( !file.exists(fichier2) ) {
-            
-            if(!require("stringdist")) install.packages("stringdist", repos="http://cran.us.r-project.org") ;
-            library(stringdist) ;
-            chemin_dossier <- "ressources/atih_liste_etablissements/";
-            pattern_fichier <- "liste_etab.+\\.csv$";
-            maxDist <- 3 ; # pour les recherches approximatives de noms de colonnes dans les fichiers
-            
-            file_list <- list.files( path = chemin_dossier, pattern = pattern_fichier, full.names = TRUE) ;
-            for (un_fichier in file_list) {
-                #   ***************************** ci-dessous : traitement d'un fichier donné
-                # Récuperer l'année et le secteur Ã  partir du nom de fichier
-                nom_fichier <- basename(un_fichier) ;
-                regex_annee <-  "(?<=_)[[:digit:]]{4}(?=.csv)" ;
-                m_annee <- regexpr(regex_annee, nom_fichier, perl = TRUE) ;
-                annee <- regmatches(nom_fichier, m_annee) ;
-                regex_secteur <-"(?<=etab_)[[:upper:]]+(?=_)" ;
-                m_secteur <- regexpr(regex_secteur, nom_fichier, perl = TRUE) ;
-                secteur <-  regmatches(nom_fichier, m_secteur) ;
-                # Importer le fichier dans un data.frame (fichiers codés en latin-1)
-                raw_etablissement <- read.csv2(
-                    file=un_fichier, fileEncoding="latin1", stringsAsFactors=FALSE, check.names=FALSE,
-                    strip.white=TRUE, colClasses="character", header=TRUE, quote="", row.names=NULL
-                ) ;
-                # On utilise la fonction amatch() du package stringdist car les noms de colonnes peuvent légèrement varier !!
-                # La colonne "status" s'appelle "type valor" dans les fichiers MCO
-                if (secteur == "MCO") {
-                    nom_col_status <- "type valor"
-                } else {
-                    nom_col_status <- "status"
-                }
-                noms_colonnes <- colnames(raw_etablissement)
-                indice_colonne <- function ( nom_colonne, liste=noms_colonnes, distance=maxDist) {
-                    return(amatch(x = nom_colonne, table = liste, maxDist = distance))
-                }
-                # Créer un vecteur qui servira de dictionnaire : position des colonnes
-                col_select <- c(
-                    "finess" = indice_colonne("finess"),
-                    "raison_sociale" = indice_colonne("raison sociale"),
-                    "status" = indice_colonne(nom_col_status),
-                    "region" = indice_colonne("region")
-                ) ;
-                # Sélectionner les bonnes colonnes
-                clean_etablissement <- raw_etablissement[, col_select] ;
-                # Changer les noms de colonnes par des noms standardisés
-                colnames(clean_etablissement) <- names(col_select)
-                # Ajouter l'année et le secteur, calculés plus haut
-                clean_etablissement$annee <- as.integer(as.character(annee))
-                clean_etablissement$secteur <- secteur
-                # Calculer tout de suite le département
-                clean_etablissement$dept <- trouve_departement(clean_etablissement$finess, type="finess") ;
-                # Remettre le tout dans l'ordre
-                clean_etablissement <- clean_etablissement[, c( "finess", "raison_sociale", "secteur", "status", "dept", "region", "annee")] ;
-                donnees_un_etablissement <- clean_etablissement ;
-                #   *****************************
-                # à réincorporer
-                if (exists("atih_identifiants_etablissements")) {
-                    atih_identifiants_etablissements <<- rbind(atih_identifiants_etablissements, donnees_un_etablissement) ;
-                } else {
-                    atih_identifiants_etablissements <<- donnees_un_etablissement
-                }
-                atih_identifiants_etablissements <<- as.data.table(atih_identifiants_etablissements) ;
-                # setkey(atih_identifiants_etablissements, finess, annee, secteur) ; # Pour simplifier : prendre la dernière valeur
-                setkey(atih_identifiants_etablissements, finess) ;
-            }
-            save(atih_identifiants_etablissements, file=fichier2) ;
-            
-        } else if( !exists("atih_identifiants_etablissements")) {
-            
-            load(file=fichier2, envir=globalenv() ) ;
-            
-        }
-        # ***********************************************************************
-        
-    } else if( ressource=="atih_termino_all") {
-        
-        fichier2  <- file.path("ressources", "atih_termino_all.RData") ;
-        
-        if ( !file.exists(fichier2) ) {
-            rtrim <- function (x) { sub("\\s+$", "", x); }
-            # CIM10 ATIH
-            nomenclature_cim10 <- fread(input="./ressources/atih_terminologies/LIBCIM10.TXT", colClasses = "character", sep="|", header=FALSE) ;
-            nomenclature_cim10 <- nomenclature_cim10[,list(V1,V4)]
-            nomenclature_cim10[,V1 := rtrim(V1)] ;
-            setnames(nomenclature_cim10,"V1","code") ;
-            setnames(nomenclature_cim10,"V4","libelle") ;
-            setkey(x=nomenclature_cim10, code) ;
-            # CCAM ATIH
-            nomenclature_ccam <- fread(input="./ressources/atih_terminologies/LIBCCAM.TXT", colClasses = "character", sep="|", header=FALSE) ;
-            nomenclature_ccam <- nomenclature_ccam[,list(V1,V3)]
-            nomenclature_ccam[,V1 := substring(V1,1,7)] ;
-            setnames(nomenclature_ccam,"V1","code") ;
-            setnames(nomenclature_ccam,"V3","libelle") ;
-            setkey(x=nomenclature_ccam, code) ;
-            # GHM MCO ATIH
-            nomenclature_ghm <- fread(input="./ressources/atih_terminologies/LIBGHMFG.TXT", colClasses = "character", sep="|", header=FALSE) ;
-            setnames(nomenclature_ghm,"V1","code") ;
-            setnames(nomenclature_ghm,"V2","libelle") ;
-            setkey(x=nomenclature_ghm, code) ;
-            # Racines de GHM MCO ATIH
-            nomenclature_rghm <- fread(input="./ressources/atih_terminologies/LIBRGHM.TXT", colClasses = "character", sep="\t", header=TRUE) ;
-            setkey(x=nomenclature_rghm, code) ;
-            # CMD MCO ATIH
-            nomenclature_cmd <- fread(input="./ressources/atih_terminologies/LIBCMDFG.TXT", colClasses = "character", sep="|", header=FALSE) ;
-            setnames(nomenclature_cmd,"V1","code") ;
-            setnames(nomenclature_cmd,"V2","libelle") ;
-            setkey(x=nomenclature_cmd, code) ;
-            # LPP MCO ATIH
-            nomenclature_lpp <- fread(input="./ressources/atih_terminologies/LIBLPP.TXT", colClasses = "character", sep="\t", header=TRUE) ;
-            nomenclature_lpp <- nomenclature_lpp[code!="",]
-            setkey(x=nomenclature_lpp, code) ;
-            # UCD MCO ATIH
-            nomenclature_ucd <- fread(input="./ressources/atih_terminologies/LIBUCD.TXT", colClasses = "character", sep="\t", header=TRUE) ;
-            nomenclature_ucd <- nomenclature_ucd[code!="",]
-            setkey(x=nomenclature_ucd, code) ;
-            # UCD MCO ATIH DCI
-            nomenclature_ucd_dci <- fread(input="./ressources/atih_terminologies/LIBUCDDCI.txt", colClasses = "character", sep="\t", header=TRUE) ;
-            nomenclature_ucd_dci <- nomenclature_ucd_dci[code!="",]
-            setkey(x=nomenclature_ucd_dci, code) ;
-            # non faits mais fichiers présents en SSR : CM, GME, RGME, CM
-            
-            atih_terminologie_cim10 <<- nomenclature_cim10 ;
-            atih_terminologie_ccam <<- nomenclature_ccam ;
-            atih_terminologie_ghm <<- nomenclature_ghm ;
-            atih_terminologie_cmd <<- nomenclature_cmd ;
-            atih_terminologie_rghm <<- nomenclature_rghm ;
-            atih_terminologie_lpp <<- nomenclature_lpp ;
-            atih_terminologie_ucd <<- nomenclature_ucd ;
-            atih_terminologie_ucd_dci <<- nomenclature_ucd_dci ;
-            
-            save( atih_terminologie_cim10, atih_terminologie_ccam, atih_terminologie_ghm, atih_terminologie_cmd, atih_terminologie_rghm, atih_terminologie_lpp, atih_terminologie_ucd, atih_terminologie_ucd_dci, file = fichier2 ) ;
-        } else if( !exists("atih_terminologie_cim10")) {
-            load(file=fichier2, envir=globalenv() ) ;
-        }
-        # ***********************************************************************    
-    }
-}
-
-## Fonction calcul de taux de mortalité avec IC95% / année
-## Obtention d'un dataframe
-
-taux_morta_ic_years <- function(data = data) {
-    stopifnot(is.data.frame(data))
-    df_taux <- data.frame(annee = NULL, taux_morta = NULL, low_bound = NULL, upp_bound = NULL)
-    for (une_annee in unique(data$annee)) {
-        annee <- une_annee
-        dc_bin <- ifelse(data$sortie_mode == 9 & data$annee == une_annee, 1, 0)
-        x <- sum(dc_bin, na.rm=TRUE)
-        n <- length(dc_bin[data$annee == une_annee])
-        temp <- binom.test(x, n, alternative ="two.sided", conf.level = 0.95) ;  
-        df_temp <- data.frame(annee = une_annee, 
-                              taux_morta = temp$estimate[[1]],
-                              low_bound = temp$conf.int[[1]],
-                              upp_bound = temp$conf.int[[2]]
-        )
-        df_taux <- rbind(df_taux, df_temp)
-    }
-    return(df_taux)
-}
-
-
-# ***********************************************************************
-# ***********************************************************************
-# ***********************************************************************   
-# *********************************************************************** 
-
-# Fonction permettant d'effectuer les regroupements de codes à partir d'un fichier csv structuré en 2 colonnes (codes, regroupement)  
-
-regroupement_modalite <- function(variable_a_regrouper, chemin_fichier, v_a_r_multivalue = TRUE) {
-  
-  # L'argument variable_a_regrouper est un vecteur qui contient les codes à regrouper
-  # 
-  # L'argument chemin_fichier correspond au chemin du fichier .csv (separateur ;) 
-  # Le tableau doit au minimum contenir deux variables : "code" et "regroupement". La première contient la liste des codes et la seconde le nom du regroupement correspondant
-  # 
-  # L'argument v_a_r_multivalue indique si la variable à regrouper est multivaluée ou non
-  # Si oui, la sortie sera un dataframe de variables binaires
-  # Si non, la sortie sera un vecteur d'une variable qualitative à plusieurs modalitées
-  # 
-  regroupements <- read.csv2(chemin_fichier, stringsAsFactors = FALSE)
-  
-  if (!v_a_r_multivalue) {
-    data_return <- rep(NA, length(variable_a_regrouper))
-  } else {
-    list_var <- unique(regroupements$regroupement)
-    data_return <- as.data.frame(matrix(data = NA, 
-                                        nrow = length(variable_a_regrouper), 
-                                        ncol = length(list_var), 
-                                        dimnames = list(NULL, list_var)))
-  }
-  
-  stopifnot(c("code","regroupement") %in% names(regroupements))
-  
-  # Recodage des modalités NA en autres
-  regroupements$regroupement[is.na(regroupements$regroupement)] <- "Autres"
-  
-  for (i in unique(regroupements$regroupement)) {
-    list_a_matcher <- regroupements$code[regroupements$regroupement == i]
-    if (v_a_r_multivalue) {
-     list_a_matcher <- paste0("(", paste(list_a_matcher, collapse = ")|("), ")", collapse ="")
-     data_return[,i] <- grepl(list_a_matcher, variable_a_regrouper)
-    } else {
-      data_return[variable_a_regrouper %in% list_a_matcher] <- i
-    }
-  }
-  data_return[data_return == FALSE] <- 0
-  data_return[data_return == TRUE] <- 1
-  return(data_return)
-}
-
-######################################################################################################################################
-######################################################################################################################################
-######################################################################################################################################
-
-
-# Fonction de fusion sur les dataframes comprennant des colonnes avec le même nom et un contenu différent
-# La fonction récupère le contenu des colonnes et renvoie un dataframe sans doublon de names()
-## En input : df_split est le dataframe obtenu après l'utilisation de fonction split_quali_multi
-## Les valeurs en double (2 x le même nom avec un code différent ne compte que pour 1)
-
-aggreg_df <- function(df_split) {
-# On renomme les colonnes en NA en "Autres"
-names(df_split)[is.na(names(df_split)) == TRUE] <- "Autres"
-# récupération des colonnes en double ou +
-doublons <- (names(df_split)[which(table(names(df_split))>1)])
-for( nom_col in unique(doublons)) {
-vec_bol <- names(df_split) == nom_col
-new_col <- apply(df_split[vec_bol], 1,sum)
-df_split[nom_col] <- new_col
-vec_new_df <- ifelse(duplicated(names(df_split)),0,1)
-df_split <- df_split[,vec_new_df == 1]
-df_split[df_split > 1] <- 1
-return(df_split)
-  }
-}
-
-######################################################################################################################################
-######################################################################################################################################
-######################################################################################################################################
-
-
-# Fonction renvoyant dataframe avec les noms de colonnes remplacés par new_names
-change_col_names <- function(dataframe, new_names) {
-  if(ncol(dataframe) == length(new_names)) {
-    df_temp <- as.data.frame(0)
-    for (i in 1:length(new_names)) {
-      df_temp[new_names[i]] <- dataframe[1, i]
-    }
-    for (j in 1:(nrow(dataframe)-1)) {
-      for (i in 1:length(new_names)) {
-        df_temp[j+1, new_names[i]] <- dataframe[j+1, i]
-      }
-    }
-    return(df_temp[,2:ncol(df_temp)]) ;
-  }
-  else {
-    print("Err : Le vecteur ne contient pas le même nombre de noms qu'il y a de colonnes dans dataframe. ")
-    return(dataframe) ;
-  }
-}
-
-
-######################################################################################################################################
-######################################################################################################################################
-######################################################################################################################################
-
-######### Ajout NDE ##############
-
-
-# Fonction pour remplacer des NA non reperés dans un fichier
-remplacement_NA <- function(donnees, vecteur_NA){
-    for (i in vecteur_NA){
-        donnees <-  data.frame(sapply(donnees, function(x) {gsub(pattern = i, replacement = NA, x)}), stringsAsFactors = FALSE)
-    }
-  
-  suppressWarnings(
-    variable_numerique <- sapply(donnees, function(x){all(is.na(x) == is.na(as.numeric(x)))})
-  )
-  donnees[,variable_numerique] <- lapply(donnees[,variable_numerique], as.numeric)
-  
-  return(donnees)
-}
-
-
-
 
 # Fonction pour nettoyer un fichier importé avec read_execl
 
@@ -2614,9 +1711,14 @@ theme_bw()
 ######## Fonctions Desc avec output HTML (nécessite kableExtra)
 
 # BINAIRE
+	# BALISE pour le fichier RMD
+	# <style>
+	# div.color { background-color:#ebf2f9;
+	# font-family: Verdana;}
+	# </style>
 desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>")
@@ -2645,12 +1747,10 @@ desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
       df_tmp$mean[df_tmp$modalites == une_modalite] = mean
       df_tmp$IC[df_tmp$modalites == une_modalite] = IC
     }
+    cat("</div>")
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
     print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
-    
-    
-    cat("\n<br>Calcul des IC95% à l'aide d'une loi binomiale\n<br>")
-  }
+     }
   
   pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
 }
@@ -2660,7 +1760,7 @@ desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
 
 desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
    name_html = paste0("<b>",name,"</b>")
-  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
     if( length(unique(na.omit( vector ))) <2 ) {
         cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
@@ -2684,6 +1784,7 @@ desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", l
     } else if( sort=="decroissant") {
         modalites <- modalites[order(0-temp[,2])] ;
     }
+cat("</div>")
     # tableau de contingence
     if( table ) {
         
@@ -2702,10 +1803,7 @@ desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", l
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
     print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
     }
-    
-        cat("\n<br>Calcul des IC95% à l'aide d'une loi binomiale\n<br>")
-    
-        
+
     # graphique maintenant
     par(mar=c(4, 10, 4, 2) + 0.1) ;
     vector <- factor(vector, levels = modalites)
@@ -2721,7 +1819,7 @@ desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", l
 #QUANTI_DISC
 desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
    name_html = paste0("<b>",name,"</b>")
-  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
     if( length(unique(na.omit( vector ))) <2 ) {
         cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
@@ -2770,7 +1868,7 @@ desc_quanti_disc_html <- function(vector, name="Variable", mean_ci=TRUE, table=T
         n <- length(vector) ;
         cat( "\n<br>Moyenne et intervalle de confiance à 95% :",  
              round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"].<br>",
-             "Calcul des IC95% à partir du théorème central limite") ;
+             "Calcul des IC95% à partir du théorème central limite</div>") ;
     }
     plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
     
