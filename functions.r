@@ -1862,7 +1862,7 @@ print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_wid
         } else if( sort=="decroissant") {
             modalites <- modalites[order(0-temp[,2])] ;
         }
-       # cat("\nLes calculs des IC95% sont r�alis�s � partir de la loi binomiale\n")
+
         df_tmp = as.data.frame(modalites)
     for( une_modalite in modalites) {
       temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
