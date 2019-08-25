@@ -195,7 +195,7 @@ div.color { background-color:#ebf2f9;
 font-family: Verdana;}
 </style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>")
@@ -241,7 +241,7 @@ div.color { background-color:#ebf2f9;
 font-family: Verdana;}
 </style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
@@ -303,7 +303,7 @@ div.color { background-color:#ebf2f9;
 font-family: Verdana;}
 </style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  cat("<br><br>------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
@@ -374,7 +374,7 @@ desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
 </style><br><div class = \"color\">")
-	cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
+	cat("<br>------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
     return( TRUE ) ;
