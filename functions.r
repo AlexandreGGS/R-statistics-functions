@@ -254,7 +254,7 @@ font-family: Verdana;}
     vector <- vector[!is.na(vector)] ;
   }
   cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
-  cat("------------------------------------------------------------------------------------<br>") ;
+  cat("------------------------------------------------------------------------------------<br></div>") ;
   
   temp <- as.data.frame(table(vector)) ;
   modalites <- temp[,1] ;
@@ -265,7 +265,6 @@ font-family: Verdana;}
   } else if( sort=="decroissant") {
     modalites <- modalites[order(0-temp[,2])] ;
   }
-  cat("</div>")
   # tableau de contingence
   if( table ) {
     
