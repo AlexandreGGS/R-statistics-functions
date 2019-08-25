@@ -190,6 +190,10 @@ remove_outliers <- function(x, na.rm = TRUE, ...) {
 # BINAIRE
 
 desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
+	  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
   cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
@@ -232,6 +236,10 @@ desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
 # QUALI
 
 desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
+	  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
   cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
@@ -291,6 +299,10 @@ desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", l
 
 #QUANTI_DISC
 desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
+	  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
   name_html = paste0("<b>",name,"</b>")
   cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
   
@@ -359,7 +371,11 @@ desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TR
 
 # QUANTI_CONT
 desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
-  cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
+    cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
+	cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
   if( length(unique(na.omit( vector ))) <2 ) {
     cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
     return( TRUE ) ;
@@ -402,42 +418,6 @@ desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0
   }
 }
 
-
-desc_quanti_cont <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
-    cat(name,"\n") ;
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
-        return( TRUE ) ;
-    }
-    vector <- as.numeric(vector) ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    print(rbind(as.matrix(summary(vector)), Sd = sd(vector))) ;
-    
-    if( mean_ci ) {
-        sd <- sd(vector) ;
-        mean <- mean(vector) ;
-        n <- length(vector) ;
-        cat( "\nMoyenne et intervalle de confiance à ",100*(1-alpha),"% :",  
-             round(mean,2),"[",round(mean+qnorm(alpha/2)*sd/sqrt(n),2),";",round(mean+qnorm(1-alpha/2)*sd/sqrt(n),2),"].\n",
-             "\nCalcul des IC",100*(1-alpha),"% à partir du théorème central limite") ;
-    }
-    if (graph) {
-        hist(vector, col="cornflowerblue", freq = FALSE, main = name, xlab = name, breaks = def_breaks, ylim = c(0,max(hist(vector, plot = F)$density, density(vector)$y)), ...)
-        if (density) {
-            lines(density(vector), col="red") ;
-        }
-    }
-    if (plot_boxplot) {
-        boxplot(vector, main = name, ylab = "")
-    }
-}
 
 
 desc_quanti_cont_delai <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
