@@ -1,23 +1,19 @@
+# Utilisation RMD en results = 'asis' pour génération HTML
+
 if(!require("knitr")) install.packages("knitr", repos="http://cran.us.r-project.org") ;
 library(knitr)
-if(!require("broman")) install.packages("broman", repos="http://cran.us.r-project.org") ;
-library(broman)   # utiliser myround(nombre)
-if(!require("qtl")) install.packages("qtl", repos="http://cran.us.r-project.org")
-library(qtl) ;
 if(!require("devtools")) install.packages("devtools", repos="http://cran.us.r-project.org")
-library(devtools) ;
+library(devtools) 
 if (!require("DT")) devtools::install_github("rstudio/DT")
-library(DT) ;
+library(DT)
 if(!require("survival")) install.packages("survival", repos="http://cran.us.r-project.org")
-library(survival) ;
+library(survival)
 if(!require("readxl")) install.packages("readxl", repos="http://cran.us.r-project.org")
 library(readxl)
 if(!require("lubridate")) install.packages("lubridate", repos="http://cran.us.r-project.org")
 library(lubridate)
 if(!require("pyramid")) install.packages("pyramid", repos="http://cran.us.r-project.org")
 library(pyramid)
-if(!require("pander")) install.packages("pander", repos="http://cran.us.r-project.org")
-library(pander)
 if(!require("tidyverse")) install.packages("tidyverse", repos="http://cran.us.r-project.org")
 library(tidyverse)
 #if(!require("kableExtra")) install.packages("kableExtra", repos="http://cran.us.r-project.org")
@@ -30,9 +26,8 @@ library(tidyverse)
 #font-family: Verdana;}
 #</style>
 
-#############################################################################################
 
-# DEPENDANCES
+# Dépendances -------------------------------------------------------------
 
 confint_prop_binom <- function(vecteur, pourcent=FALSE) {
     # retourne moyenne, borne inf, borne sup (entre 0 et 1)
@@ -188,12 +183,225 @@ remove_outliers <- function(x, na.rm = TRUE, ...) {
 
 
 
+# DESCRIPTIF --------------------------------------------------------------
 
-#############################################################################################
-#############################################################################################
-#############################################################################################
+######## Fonctions Desc avec output HTML (nécessite kableExtra)
 
-# UNIVARIEE 
+# BINAIRE
+
+desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
+  name_html = paste0("<b>",name,"</b>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+  if( length(unique(na.omit( vector ))) <2 ) {
+    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>")
+    return( TRUE )
+  }
+  
+  vector <- as.numeric(vector) ;
+  if( sum(is.na(vector))==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+    vector <- vector[!is.na(vector)] ;
+  }
+  cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+  cat("------------------------------------------------------------------------------------<br>") ;
+  if( table ) {
+    temp <- as.data.frame(table(vector)) ;
+    modalites <- temp[,1]
+    df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    cat("</div>")
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  }
+  
+  pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
+}
+
+
+# QUALI
+
+desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
+  name_html = paste0("<b>",name,"</b>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+  if( length(unique(na.omit( vector ))) <2 ) {
+    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
+    return( TRUE ) ;
+  }
+  if( sum(is.na(vector))==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+    vector <- vector[!is.na(vector)] ;
+  }
+  cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+  cat("------------------------------------------------------------------------------------<br>") ;
+  
+  temp <- as.data.frame(table(vector)) ;
+  modalites <- temp[,1] ;
+  if( sort=="alpha") {
+    modalites <- modalites[order(modalites)] ;
+  } else if( sort=="croissant") {
+    modalites <- modalites[order(temp[,2])] ;
+  } else if( sort=="decroissant") {
+    modalites <- modalites[order(0-temp[,2])] ;
+  }
+  cat("</div>")
+  # tableau de contingence
+  if( table ) {
+    
+    temp <- as.data.frame(table(vector)) ;
+    modalites <- temp[,1]
+    df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  }
+  
+  # graphique maintenant
+  par(mar=c(4, 10, 4, 2) + 0.1) ;
+  vector <- factor(vector, levels = modalites)
+  temp <- rev(prop.table(table(vector)))
+  id <- max(nrow(temp)-limit_chart+1,1):nrow(temp) ;
+  # la première modalité traçée est celle la plus proche du point (0,0), on inverse donc nos vecteurs
+  temp <- rev(temp[rev(id)])
+  modalites <- names(temp)
+  barplot(temp, horiz=TRUE, main=name, las=2, col="cornflowerblue", names.arg = substring(modalites, 1, tronque_lib_chart)) ;
+  par(mar=c(5, 4, 4, 2) + 0.1) ;
+}
+
+#QUANTI_DISC
+desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
+  name_html = paste0("<b>",name,"</b>")
+  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
+  
+  if( length(unique(na.omit( vector ))) <2 ) {
+    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
+    return( TRUE ) ;
+  }
+  
+  vector <- as.numeric(vector) ;
+  if( sum(is.na(vector))==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+    vector <- vector[!is.na(vector)] ;
+  }
+  cat("Effectif analysé:", length(na.omit(vector)),"<br>") ;
+  cat("------------------------------------------------------------------------------------<br></div>") ;
+  if (Sum) {vector_noNA = na.omit(vector)
+  df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
+  row.names(df) = c("Minimum",
+                    "1er quartile",
+                    "Médiane",
+                    "Moyenne",
+                    "3eme quartile",
+                    "Maximum",
+                    "Ecart type")
+  names(df) = name
+  print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))} ;
+  
+  if( table ) {
+    temp <- as.data.frame(table(vector)) ;
+    modalites <- temp[,1] ;
+    if( sort=="alpha") {
+      modalites <- modalites[order(modalites)] ;
+    } else if( sort=="croissant") {
+      modalites <- modalites[order(temp[,2])] ;
+    } else if( sort=="decroissant") {
+      modalites <- modalites[order(0-temp[,2])] ;
+    }
+    
+    df_tmp = as.data.frame(modalites)
+    for( une_modalite in modalites) {
+      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
+      eff <- table(vector)[une_modalite]
+      mean <- temp[1]
+      IC <- paste0("[",temp[2],";",temp[3],"]")
+      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
+      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
+      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
+    }
+    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
+    cat("<br><b><center>Détail des modalités</center></b><br>")
+    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    
+  }
+  if( mean_ci ) {
+    sd <- sd(vector) ;
+    mean <- mean(vector) ;
+    n <- length(vector) ;
+    cat( "\n<br><div class = \"color\">>Moyenne et intervalle de confiance à 95% :",  
+         round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"]</div><br>")
+  }
+  plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
+}
+
+
+# QUANTI_CONT
+desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
+  cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
+  if( length(unique(na.omit( vector ))) <2 ) {
+    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
+    return( TRUE ) ;
+  }
+  vector <- as.numeric(vector) ;
+  if( sum(is.na(vector))==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
+    vector <- vector[!is.na(vector)] ;
+  }
+  cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
+  cat("------------------------------------------------------------------------------------<br></div>") ;
+  vector_noNA = na.omit(vector)
+  df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
+  row.names(df) = c("Minimum",
+                    "1er quartile",
+                    "Médiane",
+                    "Moyenne",
+                    "3eme quartile",
+                    "Maximum",
+                    "Ecart type")
+  names(df) = name
+  print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  if( mean_ci ) {
+    sd <- sd(vector) ;
+    mean <- mean(vector) ;
+    n <- length(vector) ;
+    cat( "<br><div class = \"color\">>Moyenne et intervalle de confiance à ",100*(1-alpha),"% :",  
+         round(mean,2),"[",round(mean+qnorm(alpha/2)*sd/sqrt(n),2),";",round(mean+qnorm(1-alpha/2)*sd/sqrt(n),2),"]</div><br>")
+  }
+  if (graph) {
+    hist(vector, col="cornflowerblue", freq = FALSE, main = name, xlab = name, breaks = def_breaks, ylim = c(0,max(hist(vector, plot = F)$density, density(vector)$y)), ...)
+    if (density) {
+      lines(density(vector), col="red") ;
+    }
+  }
+  if (plot_boxplot) {
+    boxplot(vector, main = name, ylab = "")
+  }
+}
+
 
 desc_quanti_cont <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
     cat(name,"\n") ;
@@ -267,200 +475,7 @@ desc_quanti_cont_delai <- function(vector, name="Variable", mean_ci=TRUE, alpha=
     }
 }
 
-# Format : "aaaa-mm-jj" ou "jj/mm/aaaa" ou un vrai format R
-desc_date <- function(vector, name="Variable", format="%Y-%m-%d", breaks="weeks", ...) {
-    # Si le format est précisé à la Française, on peut rattrapper le coup.
-    if( format=="aaaa-mm-jj") {
-        format="%Y-%m-%d" ;
-    } else if( format=="jj/mm/aaaa") {
-        format="%d/%m/%Y" ;
-    }
-    vector <- as.Date(vector, format=format) ;
-    
-    cat(name,"\n") ;
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    print(rbind(as.matrix(summary(vector)), Sd = sd(vector))) ;
-    
-    hist(vector, breaks=breaks, plot=TRUE, freq=FALSE, main=name, xlab=name, ylab ="Density", 
-         start.on.monday = TRUE, col = "#AAAAFF")
-    temp <- na.omit(as.numeric(vector)) ; 
-    lines(density(temp), col = "red") ;
-}
 
-# Permet de tracer un histogramme de la distribution d'une variable de type heure
-desc_heure <- function(vector, name="Variable", format="%H:%M", breaks="hours", ...) {
-    # Si le format est précisé à la Française, on peut rattrapper le coup.
-    if( format=="hh:mm") {
-        format="%H:%M" ;
-    }
-    vector <- strptime(vector, format=format) ;
-    
-    cat(name,"\n") ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    print(rbind(as.matrix(summary(vector)), Sd = sd(vector))) ;
-    
-    hist(vector, breaks=breaks, plot=TRUE, freq=FALSE, main=name, xlab=name, ylab ="Density", 
-         start.on.monday = TRUE, col = "#AAAAFF")
-    temp <- na.omit(as.numeric(vector)) ; 
-    lines(density(temp), col = "red") ;
-}
-
-
-# valeurs de "sort" : "alpha", "croissant", "decroissant" ||| xlim = limite de x pour le graph
-# sum = booléen. Afficher le summary() ?
-desc_quanti_disc <- function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
-    cat(name,"\n") ;
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
-        return( TRUE ) ;
-    }
-    
-    vector <- as.numeric(vector) ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    if (Sum) {print(rbind(as.matrix(summary(vector)), Sd = sd(vector)))} ;
-    
-    if( table ) {
-        temp <- as.data.frame(table(vector)) ;
-        modalites <- temp[,1] ;
-        if( sort=="alpha") {
-            modalites <- modalites[order(modalites)] ;
-        } else if( sort=="croissant") {
-            modalites <- modalites[order(temp[,2])] ;
-        } else if( sort=="decroissant") {
-            modalites <- modalites[order(0-temp[,2])] ;
-        }
-        cat("\nLes calculs des IC95% sont réalisés à partir de la loi binomiale\n")
-        cat("\nModalite\tEffectif\tProportion\tIC95%\n") ;
-        for( une_modalite in modalites) {
-            temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;
-            cat(une_modalite,"\t",table(vector)[une_modalite],"\t",temp[1],"\t[",temp[2],";",temp[3],"]\n") ;
-        }
-    }
-    if( mean_ci ) {
-        sd <- sd(vector) ;
-        mean <- mean(vector) ;
-        n <- length(vector) ;
-        cat( "Moyenne et intervalle de confiance à 95% :",  
-             round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"].\n",
-             "Calcul des IC95% à partir du théorème central limite") ;
-    }
-    plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
-    
-}
-
-
-desc_binaire <- function(vector, name="Variable", table=TRUE, ...) {
-    cat(name,"\n") ;
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
-        return( TRUE ) ;
-    }
-    vector <- as.numeric(vector) ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    if( table ) {
-        temp <- as.data.frame(table(vector)) ;
-        modalites <- temp[,1] ;
-        cat("\nModalite\tEffectif\tProportion\tIC95%\n") ;
-        for( une_modalite in modalites) {
-            temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;
-            cat(une_modalite,"\t",table(vector)[une_modalite],"\t",temp[1],"\t[",temp[2],";",temp[3],"]\n") ;
-            knitr::kable
-        }
-        cat("\nCalcul des IC95% à l'aide d'une loi binomiale")
-    }
-    pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
-}
-
-
-
-# limit_chart permet de limiter le nombre de sorties dans le graphique
-# tronque_lib_chart permet de limiter la taille des étiquettes (code et libellé compris)
-# sort >>>> alpha / decroissant / croissant
-# tronque_lib_tab 0 par défaut (affiche tout) sinon n'affiche que les x premiers
-# Pour afficher une modalité avec un effectif nul, il faut que l'argument vector soit un facteur contenant l'ensemble des levels à afficher
-desc_quali <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, tronque_lib_tab=0, ...) {
-    cat(name,"\n") ;
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
-        return( TRUE ) ;
-    }
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.\n") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"\n") ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    
-    temp <- as.data.frame(table(vector)) ;
-    modalites <- temp[,1] ;
-    if( sort=="alpha") {
-        modalites <- modalites[order(modalites)] ;
-    } else if( sort=="croissant") {
-        modalites <- modalites[order(temp[,2])] ;
-    } else if( sort=="decroissant") {
-        modalites <- modalites[order(0-temp[,2])] ;
-    }
-    # tableau de contingence
-    if( table ) {
-      maxcar = max(nchar(as.character(modalites)))
-        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tProportion\tIC95%\n") ;
-        if ( tronque_lib_tab == 0 ) {
-            for( une_modalite in modalites) {
-                temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;      
-                cat(une_modalite, rep.int(" ",maxcar-nchar(une_modalite)),
-                    "\t",table(vector)[une_modalite],rep.int(" ",8-nchar(as.character(table(vector)[une_modalite]))),
-                    temp[1],rep.int(" ",10-nchar(as.character(temp[1]))),
-                    "[",temp[2],";",temp[3],"]\n") ;
-            }
-        } else {
-            for( une_modalite in modalites[1:tronque_lib_tab]) {
-                temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE) ;      
-                cat(une_modalite,"\t",table(vector)[une_modalite],"\t",temp[1],"\t[",temp[2],";",temp[3],"]\n") ;
-            }
-        }
-        cat("Calcul des IC95% à l'aide d'une loi binomiale")
-    }
-    # graphique maintenant
-    par(mar=c(4, 10, 4, 2) + 0.1) ;
-    vector <- factor(vector, levels = modalites)
-    temp <- rev(prop.table(table(vector)))
-    id <- max(nrow(temp)-limit_chart+1,1):nrow(temp) ;
-    # la première modalité traçée est celle la plus proche du point (0,0), on inverse donc nos vecteurs
-    temp <- rev(temp[rev(id)])
-    modalites <- names(temp)
-    barplot(temp, horiz=TRUE, main=name, las=2, col="cornflowerblue", names.arg = substring(modalites, 1, tronque_lib_chart)) ;
-    par(mar=c(5, 4, 4, 2) + 0.1) ;
-}
 
 
 # extrait_dataframe = dataframe sous la forme de variables binaires
@@ -543,363 +558,82 @@ desc_quali_multi <- function(extrait_dataframe, name="Variable", sort="decroissa
 }
 
 
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-# MULTIVARIEE
-
-
-# dans output_prop_survie, préciser éventuellement des dates pour afficher les % de survie
-desc_survie <- function(vector_evt, vector_delai, name="Variable", xmax=NULL, ymin=0, output_prop_survie=c()) {
-    cat(name,"\n") ;
-    vector_evt <- as.numeric(vector_evt) ;
-    vector_delai <- as.numeric(vector_delai) ;
-    manquant <- (is.na(vector_evt) + is.na(vector_delai))>0 ;
-    if( sum(manquant)==0 ) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(manquant),"soit",100*mean(manquant),"%.\n") ;
-        vector_evt <- vector_evt[!manquant] ;
-        vector_delai <- vector_delai[!manquant] ;
-    }
-    effet_surv <- Surv(event=vector_evt, time=vector_delai, type="right") ;
-    obj_survfit2 <- survfit( effet_surv~1, conf.int=TRUE) ;
-    plot( obj_survfit2, xmax=xmax, ymin=ymin, main=name ) ;
-    cat("Informations sur la survie (dont la médiane) :\n")
-    print( obj_survfit2) ;
-    # on peut ajouter des % de survie à telles dates...
-    if( length(output_prop_survie)>0) {
-        cat("Survies estimées par la méthode de Kaplan-Meier :\n") ;
-        # en général on a peu d'évenements donc il est intéressant de supprimer les censures
-        y <- c() ;    y_upper <- c() ;    y_lower <- c() ;
-        x <- c() ;
-        for( i in length(obj_survfit2$time) : 1 ) {
-            if(obj_survfit2$n.event[i]>=1) {
-                x <- c(x, obj_survfit2$time[i]) ;
-                y <- c(y, obj_survfit2$surv[i]) ;
-                y_upper <- c(y_upper, obj_survfit2$upper[i]) ;
-                y_lower <- c(y_lower, obj_survfit2$lower[i]) ;
-            }
-        }
-        # maintenant on parcourt
-        for( a_time in output_prop_survie) {
-            if( a_time>max(obj_survfit2$time)) {
-                cat("- à", a_time,": survie inconnue (suivi trop court)\n") ;
-            } else {
-                start <- TRUE ;
-                for( i in 1:length(x) ) {
-                    if(x[i]<a_time & !start) {
-                        cat("- à t=", a_time,"(depuis t=", x[i], "), survie estimée à", y[i], "[",y_lower[i],";",y_upper[i],"]\n") ;
-                        break ;
-                    }
-                    start <- FALSE ;
-                }
-            }
-        }
-    }
-}
-
-
-# analyse des résidus d'une régression linéaire multiple
-# regression est l'objet de régression (ou de step), et "variables" liste les noms des variables X à traiter
-# Y est toujours traité en premier, variables_x peut donc rester vide
-# le dataframe sera récupéré dans l'objet régressino
-reg_lin_analyse_residus <- function(regression, variables_x = names(regression$model)[-1]) {
-    # histogramme des résidus
-    hist(regression$residuals, col="#AAAAFF", freq=FALSE, xlab="Residus", main="Histogramme des résidus") ;
-    # résidus en fonction de Y
-    y <- row.names(attr(regression$terms, which = "factors"))[1]
-    plot(x=regression$model[,y], y=regression$residuals, xlab="Y", ylab="Residus") ;
-    
-    for(un_x in variables_x) {
-        # résidus en fonction de chaque X
-        if (is.integer(regression$model[,un_x]) | is.numeric(regression$model[,un_x]) | is.factor(regression$model[,un_x])) {
-            plot(x=regression$model[,un_x], y=regression$residuals, xlab=un_x, ylab="Residus") ;
-        } else if (is.character(regression$model[,un_x])) {
-            plot(x=factor(regression$model[,un_x]), y=regression$residuals, xlab=un_x, ylab="Residus") ;
-        } 
-    }
-}
-
-
-# distance de Cook d'une régression linéaire
-# nom_colonne_id est le nom de la colonne à utiliser pour retrouver l'identifiant. 
-# à défaut, on prendra le numéro de la ligne.
-reg_lin_dist_cook <- function(regression, nom_colonne_id=NULL) {
-    temp <- cooks.distance(regression) ;
-    if( is.null(nom_colonne_id)) {
-        numeros <- 1:nrow(regression$model) ;
-    } else {
-        numeros <- regression$model[,nom_colonne_id] ;
-    }
-    plot(temp, type="h", xlab="numero individu", ylab="distance de Cook", xlim=c(1,length(temp))) ;
-    temp2 <- data.frame(
-        index=1:nrow(regression$model),
-        id=numeros,
-        cook=temp
-    ) ;
-    temp2 <- temp2[order(-temp2$cook),] ;
-    cat("Les cinq pires individus quant à la distance de Cook :\n") ;
-    print(temp2[1:5,]) ;
-    text(labels=temp2[1:5, "id"], y=temp2[1:5, "cook"], x=temp2[1:5, "index"], cex=0.75, col="blue") ;
-}
-
-
-# coefficient de détermination d'une régression linéaire multiple
-reg_lin_R2 <- function(regression) {
-    # méthode universelle
-    coefficient <- (summary(regression)$null.deviance - summary(regression)$deviance)/summary(regression)$null.deviance  ;
-    # méthode simple pour modèle linéaire avec intercept, pour information
-    # coefficient <- cor(regression$fitted.values, regression$y)^2
-    cat("Coefficient de détermination :", coefficient, "\n") ;
-    # return( coefficient) ;
-}
-
-## Graphique des OR pour régression logistique
-reg_log_graphe_or <- function(obj_reglog, main="Logistic regression", xlab="Odds ratios", xlim=NULL) {
-    temp <- summary(obj_reglog)$coefficients ; # 1 estimate, 2 DS, 4 p val
-    label <- row.names(temp) ;
-    prop <- exp(temp[,1]) ;
-    prop_ib <- exp(temp[,1]-1.96*temp[,2]) ;
-    prop_sb <- exp(temp[,1]+1.96*temp[,2]) ;
-    pval <- temp[,4] ;
-    signif <- pval<0.05 ; # noter que ce test est meilleur que l'IC construit.
-    if(is.null(xlim)) {
-        # on prend les limites sans l'intercept, qui fausse tout
-        prop_ib2 <- prop_ib[label!="(Intercept)"] ;
-        prop_sb2 <- prop_sb[label!="(Intercept)"] ;
-        xlim <- c( min(c(0, prop_ib2))-0.1  , max(prop_sb2)+0.1) ;
-    }
-    graphe_ratio(label=label, nb=prop, nb_ib=prop_ib, nb_sb=prop_sb, xlim=xlim, main=main, xlab=xlab, ref=1, signif=signif, log=TRUE) ;
-}
-
-## Fonction pour vérifier la loglinéarité des variables
-reg_log_verif_loglineaire <- function(x, y, xname="Variable quantitative", yname="Variable binomiale (var à expliquer du modele de reglog)", titre="titre") {
-    y <- as.numeric(as.character(y))
-    propll <- aggregate(y,list(x),mean,na.rm=TRUE)
-    names(propll) <- c("x","prop")
-    ll<-cbind(merge(cbind(x,y),propll, by="x",all=TRUE),temp_deciles=as.integer(rownames(data)))
-    ll$temp_deciles1<-as.numeric(cut(ll$temp_deciles,breaks = c(seq(from = 1, to = length(ll$temp_deciles), by = length(ll$temp_deciles)/10),length(ll$temp_deciles)+1),include.lowest = TRUE))
-    verifll<-aggregate(ll,list(ll$temp_deciles1),mean,na.rm=TRUE)
-    logit<-log((1-verifll$prop)/verifll$prop)
-    droite <- lm(log((1-prop)/prop) ~ x, data = verifll)
-    plot(verifll$x,log((1-verifll$prop)/verifll$prop),xlab=xname,ylab=yname,main=titre)
-    abline(droite,col="red")}
-
-## Fonction de validation d'un modèle logistique
-reg_log_validation <- function(mod, desc_eve = T, roc = T, calib = T, quant.hoslem = 10) {
-    if(!require("ResourceSelection")) {install.packages("ResourceSelection")}
-    # 1. Nombre d'évènements suffisants
-    if (desc_eve) {
-        nb_eve <- min(table(mod$y))
-        nb_var <- length(names(mod$model)) - 1
-        cat("1. Nombre d'évènements suffisant\n")
-        cat(paste("Le nombre d'évènements (ou de non-évènement) total est de :", nb_eve, "\n"))
-        cat(paste("Il devrait être supérieur à", 5*nb_var, "-", 10*nb_var, "évènements.\n\n\n"))
-        
-        min_gpe <- integer()
-        for (i in names(mod$model)[-1]) {
-            min_gpe <- min(min_gpe, table(mod$y, mod$model[,i]))
-        }
-        cat(paste("Le plus petit groupe du croisement de Y avec une variable est de :", min_gpe, "(doit être supérieur à 5).\n\n\n"))
-        
-    }
-    
-    # 2. Qualité de prédiction (Courbe ROC, pseudo R2 de Mc Fadden)
-    if (roc) {
-        cat("2. Qualité de prédiction\n")
-        plot(jitter(mod$fitted.values, factor = 2000), mod$y, main = "Y observé en fonction de Y prédit", xlab = "Prédit", ylab = "Observé")
-        cat("La courbe ROC permet d'étudier le pouvoir discriminant du modèle, ainsi que de déterminer le meilleur seuil.\n")
-        courbe_roc(mod$y, mod$fitted.values)
-        
-    }
-    
-    # 3. Calibration du modèle : test de Hosmer-Lemeshow
-    if (calib) {
-        test <- ResourceSelection::hoslem.test(mod$y, mod$fitted.values, g = quant.hoslem)
-        cat("\n\n3. Calibration du modèle (test du Khi2 d'Hosmer-Lemeshow)\n")
-        cat("La probabilité prédite est-elle représentative de la probabilité observée ?\n")
-        if (test$statistic < 0.05) {
-            cat(paste("Rejet de H0 : le modèle ne reflète pas la vrai probabilité ( p = ",round(test$statistic, 2), "), il n'est pas calibré.\n\n"))
-        } else {
-            cat(paste("Non rejet de H0 : le modèle reflète la vrai probabilité ( p = ",round(test$statistic, 2), "), il est bien calibré.\n\n"))
-        }
-    }
-}
-
-##### Regression logistique avec selection de variable (imputation multiple sur les NA) 
-# y est la variable à expliquer
-# vecteur correspond aux variables à expliquer "c("var_1","var_2",...,"var_n")
-# La selection de variable se fait en backward
-
-RegLogLin_IM <- function(imp,y,vecteur)  {
- 
-  liste_fit <- list()                              #Initialisation de la liste qui contiendra les différentes Régressions logisitiques          
-  pc <- c()
-  pc$pvalue <- 1                                   #Initialisation de la boucle
-  i <- 1                                              
- 
-  while (pc$pvalue > 0.2) {                        #La sélection de variable s'arrête quand le test du rapport de vraisemblance est inf à 0.2
-    vecteur <- as.matrix(vecteur)
-    fit <- with(imp,glm((fmla <- as.formula(paste(y, "~", paste(vecteur, collapse= "+")))), family="binomial"))   #Réalisation de la Régression logistique sur les variables sélectionnées
-    liste_fit[[i]] <- fit                          #Stockage des différentes Régressions logistiques
-    aa <- summary(pool(fit))[-1,]                  #Stockage des p_valeurs de toutes les variables restantes
-   
-    if(length(vecteur)>1){                         #Critère d'arrêt s'il n'y a plus de variable
-      a_sortir <- which.max(aa[,5])
-      vecteur <- vecteur[-a_sortir] }             #Rejet de la variable ayant la plus grande p_value
-   
-
-    #Pour la réalisation du test de rapport de vraisemblance : on stocke dans comp0 toutes les variables retenues
-    #et dans comp1 *dans le même ordre* (pour pouvoir utiliser pool.compare) toutes les variables retenues moins celle ayant la plus grande p-value
-    comp0 <- with(imp,glm((fmla1 <- as.formula(paste(y, "~", paste(vecteur, collapse= "+")))), family="binomial"))
-   
-    if (substring(names(a_sortir),nchar(names(a_sortir)),nchar(names(a_sortir)))==2) {
-      comp1 <- with(imp,glm(fmla2 <- as.formula(paste(y, "~", paste(c(vecteur,substring(names(a_sortir),1,nchar(names(a_sortir))-1)), collapse= "+"))), family="binomial"))
-      } else {
-      comp1 <- with(imp,glm(fmla2 <- as.formula(paste(y, "~", paste(c(vecteur,names(a_sortir)), collapse= "+"))), family="binomial"))}
-   
-   
-    pc <- pool.compare(comp1, comp0, method='likelihood', data=imp)
-    i <- i+1
-  }
-  return(summary(pool(comp1)))
-}
-
-
-
-## Graphique des HR d'un modèle de cox
-reg_cox_graphe_hr <- function(obj_cox, main="Survival", xlab="Hazard ratios", xlim=NULL) {
-    temp_confint <- summary(obj_cox)$conf.int ;
-    temp_pval <- summary(obj_cox)$coefficients ;
-    label <- row.names(temp_confint) ;
-    prop <- temp_confint[,1] ;
-    prop_ib <- temp_confint[,3] ;
-    prop_sb <- temp_confint[,4] ;
-    pval <- temp_pval[,5] ;
-    signif <- pval<0.05 ; # noter que ce test est meilleur que l'IC construit.
-    if(is.null(xlim)) {
-        # pas d'intercept ici
-        xlim <- c( min(c(0, prop_ib))-0.1  , max(prop_sb)+0.1) ;
-    }
-    graphe_ratio(label=label, nb=prop, nb_ib=prop_ib, nb_sb=prop_sb, xlim=xlim, main=main, xlab=xlab, ref=1, signif=signif, log=TRUE) ;
-}
-
-
-# Cette fonction est utilisée par les fonctions reg_log_graphe_or, reg_cox_graphe_hr et reg_lin_graphe_coeff.
-# Ne cherchez pas à l'invoquer directement.
-graphe_ratio <- function(label, nb, nb_ib, nb_sb, xlim, main, xlab, ref=-999, signif=NULL, log=FALSE) {
-    if(!require("lattice")) install.packages("lattice", repos="http://cran.us.r-project.org") ;
-    library(lattice) ;
-    label2 <- as.factor(label) ;
-    # label2 <- reorder(label2, nb) ;
-    if( is.null(signif)) {
-        signif <- rep(FALSE, length(nb)) ;
-    }
-    #xlim <- c(  min(0, nb_ib) , max(1, nb_sb) )
-    plot(dotplot(label ~ nb, xlim=xlim, panel=function(x,y) {    
-        if( FALSE ) {
-            xscale.components.default(lim=xlim, scales=list(x=list(log=2))) ;
-            scales=list(x=list(log=2)) ;
-        }
-        panel.abline(v=ref,col='#CCCCCC', lty=2 )
-        panel.xyplot(x,y,pch=16,cex=1,col=ifelse(signif,'#990000','navy'))
-        panel.segments(nb_ib,as.numeric(y),nb_sb,as.numeric(y),lty=1,col=ifelse(signif,'#990000','navy'))
-    }, xlab=xlab, main=main)) ;
-}
-
-
-reg_lin_graphe_coeff <- function(regression, main="Regression", xlab="Coefficients", xlim=NULL) {
-    temp <- summary(regression)$coefficients ;
-    label <- row.names(temp) ;
-    prop <- temp[,1] ;
-    prop_ib <- temp[,1]-1.96*temp[,2] ;
-    prop_sb <- temp[,1]+1.96*temp[,2] ;
-    signif <- temp[,4]<0.05 ;
-    if(is.null(xlim)) {
-        # on prend les limites sans l'intercept, qui fausse tout
-        prop_ib2 <- prop_ib[label!="(Intercept)"] ;
-        prop_sb2 <- prop_sb[label!="(Intercept)"] ;
-        xlim <- c( min(c(0, prop_ib2))-0.1  , max(prop_sb2)+0.1) ;
-    }
-    graphe_ratio(label=label, nb=prop, nb_ib=prop_ib, nb_sb=prop_sb, main=main, xlab=xlab, ref=0, signif=signif, xlim=xlim, log=FALSE) ;
-}
+# Multivariee -------------------------------------------------------------
 
 
 # Valeurs pour method : pearson (paramétrique), spearman (non paramétrique)
-bivarie_quanti_quanti <- function(x, y, xname="Variable quantitative 1", yname="Variable quantitative 2", method="pearson", droite_reg=TRUE) {
-    cat("Analyse bivariée : Méthode du coefficient de corrélation de ",method," sur deux variables quantitatives\n")
-    coeff_r <- cor(x, y, method=method, use="complete.obs" ) ;
-    coeff_r2 <- coeff_r^2 ;
-    temp <- cor.test(x, y, method=method, alternative="two.sided") ;
-    pval <- temp$p.value ;
-    cat("Coefficient de correlation de", method, ": r=",coeff_r,", avec r²=", coeff_r2," (p=",pval,")\n") ;
-    plot(x=x, y=y, type="p", pch=20, xlab=xname, ylab=yname) ;
-    if( droite_reg ) {
-        reg <- glm(y~x) ;
-        b <- reg$coefficients[1] ;
-        a <- reg$coefficients[2] ;
-        cat("Equation droite : y =",a,"* x +",b,"\n") ;
-        points_x <- c(min(na.omit(x)), max(na.omit(x))) ;
-        points_y <- a*points_x + b ;
-        lines(x=points_x, y=points_y, type="l", col="blue") ;
-    }
+bivarie_quanti_quanti_html = function(x, y, xname="Variable quantitative 1", yname="Variable quantitative 2", method="pearson", droite_reg=TRUE) {
+  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style>")
+  cat("<br><div class = \"color\">Analyse bivariée : Méthode du coefficient de corrélation de ",method," sur deux variables quantitatives<br>")
+  coeff_r <- cor(x, y, method=method, use="complete.obs" ) ;
+  coeff_r2 <- coeff_r^2 ;
+  temp <- cor.test(x, y, method=method, alternative="two.sided") ;
+  pval <- temp$p.value ;
+  cat("Coefficient de correlation de", method, ": r=",coeff_r,", avec r²=", coeff_r2,
+      "<br><strong> La p-value = ",pval,"<br></strong></div>") ;
+  plot(x=x, y=y, type="p", pch=20, xlab=xname, ylab=yname) ;
+  if( droite_reg ) {
+    reg <- glm(y~x) ;
+    b <- reg$coefficients[1] ;
+    a <- reg$coefficients[2] ;
+    cat("<br><div class = \"color\">Equation droite : y =",a,"* x +",b,"</div><br>") ;
+    points_x <- c(min(na.omit(x)), max(na.omit(x))) ;
+    points_y <- a*points_x + b ;
+    lines(x=points_x, y=points_y, type="l", col="blue") ;
+  }
 }
 
 
 # Valeurs pour method : chisq (semi-paramétrique), fisher (non paramétrique mais attention au nombre de modalités)
-bivarie_quali_quali <- function(x, y, xname="Variable qualitative 1", yname="Variable qualitative 2", method="chisq", bin = FALSE, prop.table = TRUE, table = FALSE, mosaic = T,...) {
-    nb_valide <- nrow(na.omit(data.frame(x,y)))
-    nb_manquant <- length(x) - nb_valide
-    cat(paste0(yname, " en fonction de ", xname, ".\n")) ;
-    if (nb_manquant==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", nb_manquant,"soit",100*nb_manquant/length(x),"%.\n") ;
-    }
-    cat(paste0("Effectif analysé : ", nb_valide, ".\n")) ;
-    cat("------------------------------------------------------------------------------------\n") ;
-    
-    if( method=="chisq") {
-        cat("Analyse bivariée : Test du Chi 2 sur deux variables qualitatives\n")
-        obj <- chisq.test(table(x,y)) ;
-        print(obj) ;
-        pval <- obj$"p.value" ;
-    } else if( method=="fisher") {
-        cat("Analyse bivariée : Test de Fisher sur deux variables qualitatives\n")
-        obj <- fisher.test(table(x,y)) ;
-        print(obj) ;
-        pval <- obj$"p.value" ;
-    } else {
-        cat("Nom de méthode incorrect :", method,"\n") ;
-        return("Erreur !") ;
-    }
-    cat("\n------------------------------------------------------------------------------------\n")
-    cat("La p-value (petit p) de ce test = ",pval)
-    cat("\n------------------------------------------------------------------------------------\n")
-    
-    if( bin ) {
-        cat("\nProportions de 1 et effectifs de la variable binaire pour chaque modalité de l'autre variable")
-        cat("\nModalite\tProportion de 1\t\tEffectif\n")
-        for(une_modalite in sort(unique(na.omit(x)))) {
-            n <- sum(!is.na(y[x == une_modalite]))
-            cat(une_modalite,"\t\t",round(sum(y[x == une_modalite], na.rm = TRUE)/n*100,2),"%\t\t",sum(y[x == une_modalite], na.rm = TRUE) ,"\n")
-        } 
-    }
-    if (prop.table) {
-        prop_table <-round(100*prop.table(table(y,x),2),2)  
-        tableau_perc <- as.data.frame.matrix(prop_table)
-        cat(paste0("\nProportions de y (", yname, ") par modalité de x\n"))
-	    print(tableau_perc)
-    }
-    if (table) {
-        tableau_eff <- as.data.frame.matrix(table(y,x))
-	    cat("\nTableau des effectifs\n")
-        print(tableau_eff)
-    }
-    
-    if (mosaic) {plot(table(x, y), xlab=xname, ylab=yname, main="Mosaicplot", col="cornflowerblue")} ;
+bivarie_quali_quali_html <- function(x, y, xname="Variable qualitative 1", yname="Variable qualitative 2", method="chisq", prop.table = TRUE, table = FALSE, mosaic = T,...) {
+  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
+  nb_valide <- nrow(na.omit(data.frame(x,y)))
+  nb_manquant <- length(x) - nb_valide
+  cat(paste0(yname, " en fonction de ", xname, ".<br>")) ;
+  if (nb_manquant==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", nb_manquant,"soit",100*nb_manquant/length(x),"%.<br>") ;
+  }
+  cat(paste0("Effectif analysé : ", nb_valide, ".<br>")) ;
+  cat("------------------------------------------------------------------------------------<br>") ;
+  
+  if( method=="chisq") {
+    cat("Analyse bivariée : Test du Chi 2 sur deux variables qualitatives<br>")
+    obj <- chisq.test(table(x,y)) ;
+    print(obj) ;
+    pval <- obj$"p.value" ;
+  } else if( method=="fisher") {
+    cat("Analyse bivariée : Test de Fisher sur deux variables qualitatives<br>")
+    obj <- fisher.test(table(x,y)) ;
+    print(obj) ;
+    pval <- obj$"p.value" ;
+  } else {
+    cat("Nom de méthode incorrect :", method,"<br>") ;
+    return("Erreur !") ;
+  }
+  cat("<br>------------------------------------------------------------------------------------<br>")
+  cat("<strong>La p-value (petit p) de ce test = ",pval,"</strong>")
+  cat("<br>------------------------------------------------------------------------------------<br></div><br>")
+  if (prop.table) {
+    prop_table <-round(100*prop.table(table(y,x),2),2)  
+    tableau_perc <- as.data.frame.matrix(prop_table)
+    cat(paste0("<br><center><strong>Proportions de ", yname, " (lignes) par modalité de ",xname," (colonnes)</center></strong><br>"))
+    print(knitr::kable(tableau_perc) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  }
+  if (table) {
+    tableau_eff <- as.data.frame.matrix(table(y,x))
+    cat("<br><center><strong>Tableau des effectifs</center></strong><br>")
+    print(knitr::kable(tableau_eff) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  }
+  
+  if (mosaic) {plot(table(x, y), xlab=xname, ylab=yname, main="Mosaicplot", col="cornflowerblue")} ;
 }
 
 
@@ -909,112 +643,144 @@ bivarie_quali_quali <- function(x, y, xname="Variable qualitative 1", yname="Var
 # - wilcoxon (Mann-Whitney, 2 groupes, non paramétrique) ;
 # - kruskal (Kruskal-Wallis, plus de 2 groupes, non paramétrique)
 
-bivarie_quali_quanti <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", cond.app = F, graph = TRUE, ...) {
-    if(!is.factor(x)) {x=as.factor(x)}
-    nb_valide <- nrow(na.omit(data.frame(x,y)))
-    nb_manquant <- length(x)-nb_valide
-    cat(paste0(yname, " en fonction de ", xname, ".\n")) ;
-    if (nb_manquant==0) {
-        cat("Aucune valeur manquante.\n") ;
-    } else {
-        cat("Valeurs manquantes : n=", nb_manquant,"soit",100*nb_manquant/length(x),"%.\n") ;
+bivarie_quali_quanti_html <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", cond.app = F, graph = TRUE, ...) {
+  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
+  if(!is.factor(x)) {x=as.factor(x)}
+  nb_valide <- nrow(na.omit(data.frame(x,y)))
+  nb_manquant <- length(x)-nb_valide
+  cat(paste0(yname, " en fonction de ", xname, ".<br>")) ;
+  if (nb_manquant==0) {
+    cat("Aucune valeur manquante.<br>") ;
+  } else {
+    cat("Valeurs manquantes : n=", nb_manquant,"soit",100*nb_manquant/length(x),"%.<br>") ;
+  }
+  cat(paste0("Effectif analysé : ", nb_valide, ".<br>")) ;
+  cat("------------------------------------------------------------------------------------<br>") ;
+  
+  if (cond.app == T) {
+    cat("Vérification des conditions d'application :<br>")
+    cat("1. Normalité de la distribution dans chaque groupe (méthode graphique). Voir graphiques.<br>")
+    var_min <- numeric()
+    var_max <- numeric()
+    for (une_modalite in unique(x)) {
+      normPlot(y[x == une_modalite], une_modalite)
+      ifelse(length(na.omit(y[x == une_modalite])) >= 30, cat("Note : l'Effectif de l'échantillon est supérieur ou égal à 30 (hors NA).<br>"), cat(""))
     }
-    cat(paste0("Effectif analysé : ", nb_valide, ".\n")) ;
-    cat("------------------------------------------------------------------------------------\n") ;
+    var_min <- min(c(var_min, sd(y[x == une_modalite])^2, na.rm = T))
+    var_max <- max(c(var_max, sd(y[x == une_modalite])^2, na.rm = T))
+    cat("2. Egalité des variances.<br>")
+    cat(paste("Le rapport de la variance max / variance min = ", round(var_max/var_min, 2), "(doit être inférieur à 1,5)"))
+    cat("<br>------------------------------------------------------------------------------------<br>")
+  }
+  
+  if( method=="student") {
+    cat("Analyse bivariée : Test t de Student d'une variable qualitative avec une variable quantitative<br>")
+    obj <- t.test(y~x, var.equal=FALSE);
+    pval <- as.numeric(obj$p.value);
+    print(obj) ;
+  } else if( method=="anova") {
+    cat("Analyse bivariée : Test d'analyse de variances (ANOVA) d'une variable qualitative avec une variable quantitative<br>")
+    obj <- aov(y~x);
+    pval <- as.numeric(summary(obj)[[1]][["Pr(>F)"]][1])
+    print(summary(obj)) ;
+  } else if( method=="wilcoxon") {
+    cat("Analyse bivariée : Test de Wilcoxon d'une variable qualitative avec une variable quantitative<br>")
+    obj <-wilcox.test(y~x);
+    pval<-obj$p.value;
+    print(obj) ;
+  } else if( method=="kruskal") {
+    cat("Analyse bivariée : Test de Kruskal-Wallis d'une variable qualitative avec une variable quantitative<br>")
+    obj <-kruskal.test(x=y, g=x, na.action=na.rm);
+    pval<-obj$p.value;
+    print(obj) ;
+  } else {
+    cat("Nom de méthode incorrect :", method,"<br>") ;
+    return("Erreur !") ;
+  }
+  cat("<strong><br>------------------------------------------------------------------------------------<br>")
+  cat("La p-value (petit p) de ce test = ",pval)
+  cat("<br>------------------------------------------------------------------------------------<br></strong></div>")
+  maxcar = max(nchar(as.character(unique(x))),na.rm = T)
+  if (method %in% c("student", "anova")) {
+    cat("<br><center><strong>Moyennes avec IC95% pour chaque modalité de la variable qualitative</center></strong><br>")
+    df_temp = tibble(quali = NA,
+                     n = NA,
+                     mean_quanti = NA,
+                     ic = NA)
+    for (une_modalite in sort(unique(na.omit(x)))) {
+      quali <- une_modalite
+      n <- sum(!is.na(y[x == quali]))
+      mean_quanti <- mean(y[x == quali], na.rm = TRUE)
+      mean_quanti <- round(mean_quanti,2)
+      low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
+      upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
+      df_temp = bind_rows(df_temp,tibble(quali,
+                                         n,
+                                         mean_quanti,
+                                         ic = paste0("[",low_bound,";",upp_bound,"]"))
+      )
+    }
+    df_temp = df_temp %>% filter(!is.na(quali)) %>% select(`Modalité` = quali,
+                                                           `Effectif` = n,
+                                                           `Moyenne` = mean_quanti,
+                                                           `IC95%` = ic)
+    print(knitr::kable(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  } else if (method %in% c("wilcoxon", "kruskal")) {
+    cat("<br><center><strong>Médianes avec intervalle inter-quartile [Q1;Q3] pour chaque modalité de la variable qualitative</center></strong><br>")
+    df_temp = tibble(quali = NA,
+                     n = NA,
+                     med_quanti = NA,
+                     ic = NA)
+    for (une_modalite in sort(unique(na.omit(x)))) {
+      quali <- une_modalite
+      n <- sum(!is.na(y[x == quali]))
+      med_quanti <- median(y[x == quali], na.rm = TRUE)
+      med_quanti <- round(med_quanti,2)
+      low_bound <- round(quantile(y[x == quali], probs = 0.25, na.rm = TRUE), 2)
+      upp_bound <- round(quantile(y[x == quali], probs = 0.75, na.rm = TRUE), 2)
+      df_temp = bind_rows(df_temp,tibble(quali,
+                                         n,
+                                         med_quanti,
+                                         ic = paste0("[",low_bound,";",upp_bound,"]"))
+      )
+    }
+    df_temp = df_temp %>% filter(!is.na(quali)) %>% select(`Modalité` = quali,
+                                                           `Effectif` = n,
+                                                           `Médiane` = med_quanti,
+                                                           `Intervalle interquartile` = ic)
+    print(knitr::kable(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
     
-    if (cond.app == T) {
-        cat("Vérification des conditions d'application :\n")
-        cat("1. Normalité de la distribution dans chaque groupe (méthode graphique). Voir graphiques.\n")
-        var_min <- numeric()
-        var_max <- numeric()
-        for (une_modalite in unique(x)) {
-            normPlot(y[x == une_modalite], une_modalite)
-            ifelse(length(na.omit(y[x == une_modalite])) >= 30, cat("Note : l'Effectif de l'échantillon est supérieur ou égal à 30 (hors NA).\n"), cat(""))
-        }
-        var_min <- min(c(var_min, sd(y[x == une_modalite])^2, na.rm = T))
-        var_max <- max(c(var_max, sd(y[x == une_modalite])^2, na.rm = T))
-        cat("2. Egalité des variances.\n")
-        cat(paste("Le rapport de la variance max / variance min = ", round(var_max/var_min, 2), "(doit être inférieur à 1,5)"))
-        cat("\n------------------------------------------------------------------------------------\n")
+    cat("<br><center><strong>Moyennes avec IC95% pour chaque modalité de la variable qualitative</center></strong><br>")
+    df_temp = tibble(quali = NA,
+                     n = NA,
+                     mean_quanti = NA,
+                     ic = NA)
+    for (une_modalite in sort(unique(na.omit(x)))) {
+      quali <- une_modalite
+      n <- sum(!is.na(y[x == quali]))
+      mean_quanti <- mean(y[x == quali], na.rm = TRUE)
+      mean_quanti <- round(mean_quanti,2)
+      low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
+      upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
+      df_temp = bind_rows(df_temp,tibble(quali,
+                                         n,
+                                         mean_quanti,
+                                         ic = paste0("[",low_bound,";",upp_bound,"]"))
+      )
     }
-    
-    if( method=="student") {
-        cat("Analyse bivariée : Test t de Student d'une variable qualitative avec une variable quantitative\n")
-        obj <- t.test(y~x, var.equal=FALSE);
-        pval <- as.numeric(obj$p.value);
-        print(obj) ;
-    } else if( method=="anova") {
-        cat("Analyse bivariée : Test d'analyse de variances (ANOVA) d'une variable qualitative avec une variable quantitative\n")
-        obj <- aov(y~x);
-        pval <- as.numeric(summary(obj)[[1]][["Pr(>F)"]][1])
-        print(summary(obj)) ;
-    } else if( method=="wilcoxon") {
-        cat("Analyse bivariée : Test de Wilcoxon d'une variable qualitative avec une variable quantitative\n")
-        obj <-wilcox.test(y~x);
-        pval<-obj$p.value;
-        print(obj) ;
-    } else if( method=="kruskal") {
-        cat("Analyse bivariée : Test de Kruskal-Wallis d'une variable qualitative avec une variable quantitative\n")
-        obj <-kruskal.test(x=y, g=x, na.action=na.rm);
-        pval<-obj$p.value;
-        print(obj) ;
-    } else {
-        cat("Nom de méthode incorrect :", method,"\n") ;
-        return("Erreur !") ;
-    }
-    cat("\n------------------------------------------------------------------------------------\n")
-    cat("La p-value (petit p) de ce test = ",pval)
-    cat("\n------------------------------------------------------------------------------------\n")
-    maxcar = max(nchar(as.character(unique(x))),na.rm = T)
-    if (method %in% c("student", "anova")) {
-        cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMoyenne            IC95%\n", sep = "")
-        for (une_modalite in sort(unique(na.omit(x)))) {
-            quali <- une_modalite
-            n <- sum(!is.na(y[x == quali]))
-            mean_quanti <- mean(y[x == quali], na.rm = TRUE)
-            mean_quanti <- round(mean_quanti,2)
-            low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
-                 "\t", mean_quanti,rep.int(" ",abs(10-nchar(as.character(mean_quanti)))),
-                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
-        }
-    } else if (method %in% c("wilcoxon", "kruskal")) {
-        cat("\nMédianes avec intervalle inter-quartile pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMédiane            IQ\n", sep = "")
-        for (une_modalite in sort(unique(na.omit(x)))) {
-            quali <- une_modalite
-            n <- sum(!is.na(y[x == quali]))
-            med_quanti <- median(y[x == quali], na.rm = TRUE)
-            med_quanti <- round(med_quanti,2)
-            low_bound <- round(quantile(y[x == quali], probs = 0.25, na.rm = TRUE), 2)
-            upp_bound <- round(quantile(y[x == quali], probs = 0.75, na.rm = TRUE), 2)
-            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
-                 "\t", med_quanti,rep.int(" ",abs(10-nchar(as.character(med_quanti)))),
-                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
-        }
-        cat("\nMoyennes avec IC95% pour chaque modalité de la variable qualitative\n")
-        cat("\nModalite",rep.int(" ",abs(maxcar-8)),"\tEffectif\tMoyenne            IC95%\n", sep = "")
-        for (une_modalite in sort(unique(na.omit(x)))) {
-            quali <- une_modalite
-            n <- sum(!is.na(y[x == quali]))
-            mean_quanti <- mean(y[x == quali], na.rm = TRUE)
-            mean_quanti <- round(mean_quanti,2)
-            low_bound <- round(mean_quanti-1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            upp_bound <- round(mean_quanti+1.96*sd(y[x == quali], na.rm = TRUE)/sqrt(n),2)
-            cat(une_modalite,rep.int(" ",maxcar-nchar(une_modalite)),
-                "\t", n,rep.int(" ",abs(8-nchar(as.character(n)))),
-                 "\t", mean_quanti,rep.int(" ",abs(10-nchar(as.character(mean_quanti)))),
-                 "\t[",low_bound,";",upp_bound,"]\n", sep = "")
-        }
-    }
-    
-    if ( graph ) {
-        boxplot(y~x, xlab=xname, ylab=yname, col="cornflowerblue", ...) ;
-    }
+    df_temp = df_temp %>% filter(!is.na(quali)) %>% select(`Modalité` = quali,
+                                                           `Effectif` = n,
+                                                           `Moyenne` = mean_quanti,
+                                                           `IC95%` = ic)
+    print(knitr::kable(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  }
+  
+  if ( graph ) {
+    boxplot(y~x, xlab=xname, ylab=yname, col="cornflowerblue", ...) ;
+  }
 }
 
 
@@ -1379,41 +1145,6 @@ bivarie_survie <- function(vector_evt, vector_delai, vector_strate,  name="Varia
 }
 
 
-
-# dataframe est l'extrait de dataframe à analyser : toutes les colonnes de cet argument seront incluses.
-acp <- function(dataframe) {
-    if(!require("FactoMineR")) install.packages("FactoMineR", repos="http://cran.us.r-project.org") ;
-    library(FactoMineR) ;
-    
-    nrow_av <- nrow(dataframe) ;
-    dataframe <- na.omit(dataframe) ;
-    nrow_ap <- nrow(dataframe) ;
-    manquants <- nrow_av - nrow_ap ;
-    if( manquants>0 ) {
-        cat("Valeurs manquantes. Lignes ignorées pour l'ACP : n=", manquants,"soit",100*manquants/nrow_av,"%.\n") ;
-    }
-    # avec le paramètre graph=T, cette méthode nous tracerait aussi le plan factoriel des variables et celui des individus
-    mon_acp <- PCA(dataframe, scale.unit=TRUE, ncp=3, graph=F) ;
-    
-    # pour CP1-CP2 et CP1-CP3, plan factoriel des variables et plan des individus
-    for( y in 2:3) {
-        ylab <- paste("CP",y, sep="") ;
-        col <- "black" ;
-        plot(x=mon_acp$var$cor[,1], y=mon_acp$var$cor[,y], xlab="CP1", ylab=ylab, pch=".", cex=6, xlim=c(-2,2), ylim=c(-1,1), bty="n", col="red") ;
-        lines(x=c(-1,1), y=c(0,0)) ;
-        lines(y=c(-1,1), x=c(0,0)) ;
-        cercle_x <- seq(from=-1, to=1, by=0.02) ; cercle_y <- sqrt(1-cercle_x^2) ; lines(y=cercle_y, x=cercle_x) ; cercle_y <- 0-sqrt(1-cercle_x^2) ; lines(y=cercle_y, x=cercle_x) ;
-        text(x=mon_acp$var$cor[,1], y=mon_acp$var$cor[,y], labels=row.names(mon_acp$var$cor), col="blue", pos=4, cex=0.75) ;
-        plot(x=mon_acp$ind$coord[,1],y=mon_acp$ind$coord[,y], xlab="CP1", ylab=ylab, pch=".", cex=4, col=col)
-    }
-    # valeurs propres
-    plot(x=1:nrow(mon_acp$eig), y=mon_acp$eig[,"percentage of variance"]/100, type="h", ylim=c(0,1), xlab="composante", ylab="part de variance expliquée") ;
-    plot(x=1:nrow(mon_acp$eig), y=mon_acp$eig[,"cumulative percentage of variance"]/100, type="b", ylim=c(0,1), xlab="composante", ylab="part de variance expliquée cumulée") ;
-    cat("Part de variance expliquée cumulative :\n") ;
-    print(mon_acp$eig[,"cumulative percentage of variance"]) ;
-}
-
-
 # dataframe est l'extrait de dataframe à analyser : toutes les colonnes de cet argument seront incluses.
 # method peut valoir "pearson", "kendall" ou "spearman"
 # non_sig : que faut-il faire des coeff avec p>5% ? "montre", "cache", "barre". "cache" est par défaut, recommandé.
@@ -1460,72 +1191,7 @@ matrice_correlation <- function(dataframe, method="pearson", non_sig="cache") {
     print(M) ;
 }
 
-
-#' @title Plot pyramide des ages
-#' @description Dessine une pyramide des ages en fonction des ages et du sexe
-#' @param age integer Ages en années
-#' @param sexe boolean Sexe masculin = 1 sinon est féminin
-#  package cowplot pour placer correctement les labels des axes (AGE) => avec fonction ggdraw
-#' @import ggplot2 grid dplyr
-
-plot_pyramide_ages2 <- function(age, sexe, largeur = 5) {
-    if(!require("ggplot2")) install.packages("ggplot2", repos="http://cran.us.r-project.org") ;
-    library(ggplot2) ;
-    if(!require("grid")) install.packages("grid", repos="http://cran.us.r-project.org") ;
-    library(grid) ;
-    if(!require("dplyr")) install.packages("dplyr", repos="http://cran.us.r-project.org") ;
-    library(dplyr) ;
-    #if(!require("cowplot")) install.packages("cowplot", repos="http://cran.us.r-project.org") ;
-    #library(cowplot) ;
-    hommes <- sexe == 1
-    # Arrondir par classes d'age
-    ages <- cut(age, breaks=c(-Inf, seq(from = largeur, to = 100, by = largeur), Inf)) ;
-    repartition_hommes <- as.data.frame(table(ages[hommes]))
-    repartition_femmes <- as.data.frame(table(ages[!hommes]))
-    repartition <- merge(x = repartition_hommes, y = repartition_femmes, by = "Var1")  
-    repartition <- rename(repartition, age = Var1, hommes = Freq.x, femmes = Freq.y)   
-    nombre_max <- max(repartition$hommes, repartition$femmes)
-    gghommes <- 
-        ggplot(repartition) +
-        aes(x = age, y = hommes) +
-        geom_bar(stat = "identity", fill = "cornflowerblue") +
-        coord_flip(ylim = c(0, nombre_max)) +
-        scale_y_reverse() +
-        theme(
-            axis.title.x = element_blank(),
-            axis.title.y = element_blank(),
-            #         axis.text.y = element_blank(),
-            #         axis.ticks.y = element_blank(),
-            plot.margin = unit(c(0, 0, 0, 0), "mm")
-        ) +
-        theme_bw() 
-    ggfemmes <- 
-        ggplot(repartition) +
-        aes(x = age, y = femmes) +
-        geom_bar(stat = "identity", fill = "lightpink") +
-        coord_flip(ylim = c(0, nombre_max)) +
-        theme(
-            axis.title.x = element_text(size = 0),
-            axis.title.y = element_text(size = 0),
-            #         axis.text.y element_text(size = 0),
-            #         axis.ticks.y element_text(size = 0),
-            #         plot.margin = unit(c(1, -1, 1, 0), "mm")
-            plot.margin = unit(c(0, 0, 0, 0), "mm")
-        ) +
-        theme_bw()
-    grid.newpage()
-    # cadre_gauche <- viewport(x = 0.4, width = 0.2, name = "cadre_gauche")
-    # cadre_droit <- viewport(x = 0.6, width = 0.3, name = "cadre_droit")
-    # pushViewport(cadre_gauche)
-    pushViewport(
-        viewport(layout = grid.layout(nrow = 1, ncol = 2, widths = c(0.5, 0.5)))
-    )
-    print(gghommes, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-    print(ggdraw(switch_axis_position(ggfemmes + theme_bw(), axis = 'y')), vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
-    return(invisible(NULL))
-}
-
-
+# Pyramide des âges
 
 plot_pyramide_ages <- function(age, sexe, largeur = 5, vec_axis_x = NULL){
     if(!require("pyramid")) install.packages("pyramid", repos="http://cran.us.r-project.org") ;
@@ -1713,230 +1379,7 @@ theme_bw()
 }
 	
 	
-######## Fonctions Desc avec output HTML (nécessite kableExtra)
 
-# BINAIRE
-	# BALISE pour le fichier RMD
-	# <style>
-	# div.color { background-color:#ebf2f9;
-	# font-family: Verdana;}
-	# </style>
-desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
-  name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
-  
-  if( length(unique(na.omit( vector ))) <2 ) {
-    cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>")
-    return( TRUE )
-  }
-  
-  vector <- as.numeric(vector) ;
-  if( sum(is.na(vector))==0) {
-    cat("Aucune valeur manquante.<br>") ;
-  } else {
-    cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
-    vector <- vector[!is.na(vector)] ;
-  }
-  cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
-  cat("------------------------------------------------------------------------------------<br>") ;
-  if( table ) {
-        temp <- as.data.frame(table(vector)) ;
-        modalites <- temp[,1]
-    df_tmp = as.data.frame(modalites)
-    for( une_modalite in modalites) {
-      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
-      eff <- table(vector)[une_modalite]
-      mean <- temp[1]
-      IC <- paste0("[",temp[2],";",temp[3],"]")
-      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
-      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
-      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
-    }
-    cat("</div>")
-    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
-    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
-     }
-  
-  pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
-}
-
-	
-# QUALI
-
-desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
-   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
-  
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
-        return( TRUE ) ;
-    }
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.<br>") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
-    cat("------------------------------------------------------------------------------------<br>") ;
-    
-    temp <- as.data.frame(table(vector)) ;
-    modalites <- temp[,1] ;
-    if( sort=="alpha") {
-        modalites <- modalites[order(modalites)] ;
-    } else if( sort=="croissant") {
-        modalites <- modalites[order(temp[,2])] ;
-    } else if( sort=="decroissant") {
-        modalites <- modalites[order(0-temp[,2])] ;
-    }
-cat("</div>")
-    # tableau de contingence
-    if( table ) {
-        
-           temp <- as.data.frame(table(vector)) ;
-        modalites <- temp[,1]
-    df_tmp = as.data.frame(modalites)
-    for( une_modalite in modalites) {
-      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
-      eff <- table(vector)[une_modalite]
-      mean <- temp[1]
-      IC <- paste0("[",temp[2],";",temp[3],"]")
-      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
-      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
-      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
-    }
-    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
-    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
-    }
-
-    # graphique maintenant
-    par(mar=c(4, 10, 4, 2) + 0.1) ;
-    vector <- factor(vector, levels = modalites)
-    temp <- rev(prop.table(table(vector)))
-    id <- max(nrow(temp)-limit_chart+1,1):nrow(temp) ;
-    # la première modalité traçée est celle la plus proche du point (0,0), on inverse donc nos vecteurs
-    temp <- rev(temp[rev(id)])
-    modalites <- names(temp)
-    barplot(temp, horiz=TRUE, main=name, las=2, col="cornflowerblue", names.arg = substring(modalites, 1, tronque_lib_chart)) ;
-    par(mar=c(5, 4, 4, 2) + 0.1) ;
-}
-
-#QUANTI_DISC
-desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
-   name_html = paste0("<b>",name,"</b>")
-  cat("<br><br><div class = \"color\">------------------------------------------------------------------------------------<br>",name_html,"<br>---------------<br>")
-  
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée<br>") ;
-        return( TRUE ) ;
-    }
-    
-    vector <- as.numeric(vector) ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.<br>") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé:", length(na.omit(vector)),"<br>") ;
-    cat("------------------------------------------------------------------------------------<br></div>") ;
-    if (Sum) {vector_noNA = na.omit(vector)
-df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
-row.names(df) = c("Minimum",
-                  "1er quartile",
-                  "Médiane",
-                  "Moyenne",
-                  "3eme quartile",
-                  "Maximum",
-                  "Ecart type")
-names(df) = name
-print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))} ;
-    
-    if( table ) {
-        temp <- as.data.frame(table(vector)) ;
-        modalites <- temp[,1] ;
-        if( sort=="alpha") {
-            modalites <- modalites[order(modalites)] ;
-        } else if( sort=="croissant") {
-            modalites <- modalites[order(temp[,2])] ;
-        } else if( sort=="decroissant") {
-            modalites <- modalites[order(0-temp[,2])] ;
-        }
-
-        df_tmp = as.data.frame(modalites)
-    for( une_modalite in modalites) {
-      temp <- confint_prop_binom(vecteur=(vector==une_modalite), pourcent=TRUE)
-      eff <- table(vector)[une_modalite]
-      mean <- temp[1]
-      IC <- paste0("[",temp[2],";",temp[3],"]")
-      df_tmp$eff[df_tmp$modalites == une_modalite] = eff
-      df_tmp$mean[df_tmp$modalites == une_modalite] = mean
-      df_tmp$IC[df_tmp$modalites == une_modalite] = IC
-    }
-    names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
-    cat("<br><b><center>Détail des modalités</center></b><br>")
-    print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
-    
-    }
-    if( mean_ci ) {
-        sd <- sd(vector) ;
-        mean <- mean(vector) ;
-        n <- length(vector) ;
-        cat( "\n<br><div class = \"color\">>Moyenne et intervalle de confiance à 95% :",  
-             round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"]</div><br>")
-    }
-    plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
-}
-		   
-		       
-# QUANTI_CONT
-desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
-    cat("<br><div class = \"color\">------------------------------------------------------------------------------------<br><b>",name,"</b><br>---------------<br>") ;
-    if( length(unique(na.omit( vector ))) <2 ) {
-        cat("Cette colonne comporte au plus une valeur et ne sera pas analysée\n") ;
-        return( TRUE ) ;
-    }
-    vector <- as.numeric(vector) ;
-    if( sum(is.na(vector))==0) {
-        cat("Aucune valeur manquante.<br>") ;
-    } else {
-        cat("Valeurs manquantes : n=", sum(is.na(vector)),"soit",100*mean(is.na(vector)),"%.<br>") ;
-        vector <- vector[!is.na(vector)] ;
-    }
-    cat("Effectif analysé :", length(na.omit(vector)),"<br>") ;
-    cat("------------------------------------------------------------------------------------<br></div>") ;
-    vector_noNA = na.omit(vector)
-df = as.data.frame(rbind(as.matrix(summary(vector_noNA)), Sd = sd(vector_noNA,na.rm=T)))
-row.names(df) = c("Minimum",
-                  "1er quartile",
-                  "Médiane",
-                  "Moyenne",
-                  "3eme quartile",
-                  "Maximum",
-                  "Ecart type")
-names(df) = name
-print(knitr::kable(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))
-    if( mean_ci ) {
-        sd <- sd(vector) ;
-        mean <- mean(vector) ;
-        n <- length(vector) ;
-        cat( "<br><div class = \"color\">>Moyenne et intervalle de confiance à ",100*(1-alpha),"% :",  
-             round(mean,2),"[",round(mean+qnorm(alpha/2)*sd/sqrt(n),2),";",round(mean+qnorm(1-alpha/2)*sd/sqrt(n),2),"]</div><br>")
-    }
-    if (graph) {
-        hist(vector, col="cornflowerblue", freq = FALSE, main = name, xlab = name, breaks = def_breaks, ylim = c(0,max(hist(vector, plot = F)$density, density(vector)$y)), ...)
-        if (density) {
-            lines(density(vector), col="red") ;
-        }
-    }
-    if (plot_boxplot) {
-        boxplot(vector, main = name, ylab = "")
-    }
-}
-	
-	
-	
-	
 ################### Copier un dataframe directement dans le clipboard pour colelr dans excel
 copy_excel <- function(df, sep="\t", dec=",", max.size=(200*1000)){
     # Copy a data.frame to clipboard
