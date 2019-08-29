@@ -235,7 +235,7 @@ font-family: Verdana;}
 
 # QUALI
 
-desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="alpha", limit_chart=Inf, tronque_lib_chart=20, ...) {
+desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="decroissant", limit_chart=Inf, tronque_lib_chart=20, ...) {
 	  cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
@@ -263,7 +263,7 @@ font-family: Verdana;}
   } else if( sort=="croissant") {
     modalites <- modalites[order(temp[,2])] ;
   } else if( sort=="decroissant") {
-    modalites <- modalites[order(0-temp[,2])] ;
+    	  vector <- fct_infreq(as.factor(vector))
   }
   # tableau de contingence
   if( table ) {
