@@ -413,7 +413,7 @@ font-family: Verdana;}
     }
   }
   if (plot_boxplot) {
-    boxplot(vector, main = name, ylab = "")
+    boxplot(vector, main = name, ylab = "", col="cornflowerblue")
   }
 }
 
