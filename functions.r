@@ -2,6 +2,10 @@
 
 if(!require("knitr")) install.packages("knitr", repos="http://cran.us.r-project.org") ;
 library(knitr)
+if(!require("viridis")) install.packages("viridis", repos="http://cran.us.r-project.org") ;
+library(viridis)
+if(!require("plotly")) install.packages("plotly", repos="http://cran.us.r-project.org") ;
+library(plotly)
 if(!require("devtools")) install.packages("devtools", repos="http://cran.us.r-project.org")
 library(devtools) 
 if (!require("DT")) devtools::install_github("rstudio/DT")
@@ -621,8 +625,8 @@ font-family: Verdana;}
 # - anova (plus de 2 groupes, paramétrique) ;
 # - wilcoxon (Mann-Whitney, 2 groupes, non paramétrique) ;
 # - kruskal (Kruskal-Wallis, plus de 2 groupes, non paramétrique)
-
-bivarie_quali_quanti_html <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", cond.app = F, graph = TRUE, ...) {
+library(plotly)
+bivarie_quali_quanti_html <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", cond.app = F, graph = F, ggraph = T, ...) {
   cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
@@ -760,8 +764,19 @@ font-family: Verdana;}
   if ( graph ) {
     boxplot(y~x, xlab=xname, ylab=yname, col="cornflowerblue", ...) ;
   }
+  
+  if( ggraph ) {
+    df= tibble(x = x, y = y)
+    df$x = fct_reorder(df$x,df$y,na.rm = T)
+    ggplotly(
+      ggplot(data = df, aes(x = x, y = y, fill = x)) +
+             geom_boxplot() +
+             xlab(xname) + ylab(yname) + theme_minimal() +
+             theme(axis.text.x = element_text(angle = 90, hjust = 1,size = 7)) +
+             scale_fill_viridis_d() + coord_flip()
+    )
+  }
 }
-
 
 ## Test bivarié t de student pour groupes appariés
 bivarie_quali_quanti_app <- function(x, y, xname="Variable qualitative", yname="Variable quantitative", method="student", graph = TRUE, ...) {
