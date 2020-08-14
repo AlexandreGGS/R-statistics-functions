@@ -440,7 +440,7 @@ font-family: Verdana;}
     geom_violin(fill = "cornflowerblue") +
     coord_flip() + #geom_boxplot(width=0.1) + 
     ggtitle(name) + ylab("Valeur") + theme_bw() + xlab("")
-    print(ggplotly(gg_box))
+    ggplotly(gg_box)
   }
   if (plotly) {
     t = tibble(x = vector)
@@ -453,7 +453,7 @@ font-family: Verdana;}
         lwd = 1, 
         col = 'red'
     )
-   print(ggplotly(gg))
+   ggplotly(gg)
   }
 }
 
