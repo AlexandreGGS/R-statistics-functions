@@ -239,7 +239,7 @@ font-family: Verdana;}
 
 # QUALI
 
-desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="decroissant", limit_chart=Inf, tronque_lib_chart=20, ...) {
+desc_quali_html <- function(vector, name="Variable", table=TRUE, sort="decroissant", limit_chart=Inf, tronque_lib_chart=20, plotly = TRUE, old_graph = FALSE, plot_eff = TRUE, ...) {
 	  cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
@@ -288,7 +288,8 @@ font-family: Verdana;}
     print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   
-  # graphique maintenant
+  # graphique à l'ancienne
+  if(old_graph == TRUE){
   par(mar=c(4, 10, 4, 2) + 0.1) ;
   vector <- factor(vector, levels = modalites)
   temp <- rev(prop.table(table(vector)))
@@ -299,7 +300,24 @@ font-family: Verdana;}
   barplot(temp, horiz=TRUE, main=name, las=2, col="cornflowerblue", names.arg = substring(modalites, 1, tronque_lib_chart)) ;
   par(mar=c(5, 4, 4, 2) + 0.1) ;
 }
+# Graph plotly
+if(plotly == TRUE){
+  # récup pourcentage en numeric
+  df_tmp = tibble(modalites=vector) %>% group_by(modalites) %>%
+   summarise(nb = n(),y_plot = round(nb/nrow(.),2)*100,.groups = 'drop')
+if(plot_eff == TRUE) {
+df_tmp$y_plot = df_tmp$nb
+y_lab_plot = "Effectifs"
+} else {y_lab_plot = "Proportions"}
+  gg = ggplot(df_tmp,aes(x=fct_rev(modalites),y=y_plot)) +
+    geom_bar(stat = "identity", fill = "cornflowerblue") +
+    scale_fill_viridis(discrete = T) +
+    ggtitle(name) + xlab("Modalités") + ylab(y_lab_plot) +
+    coord_flip() + theme_bw()
+  ggplotly(gg)
+}
 
+}
 #QUANTI_DISC
 desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
 	  cat("<style>
