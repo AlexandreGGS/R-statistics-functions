@@ -810,7 +810,7 @@ font-family: Verdana;}
              xlab(xname) + ylab(yname) + theme_minimal() +
              theme(axis.text.x = element_text(angle = 90, hjust = 1,size = 7)) +
              scale_fill_viridis_d() + coord_flip()
-    )
+    ) %>% layout(showlegend = FALSE) # no legend
   }
 }
 
