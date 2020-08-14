@@ -391,7 +391,7 @@ font-family: Verdana;}
 
 
 # QUANTI_CONT
-desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = F, graph=TRUE, density=TRUE, ...) {
+desc_quanti_cont_html <- function(vector, name="Variable", mean_ci=TRUE, alpha=0.05, def_breaks = "Sturges", plot_boxplot = FALSE, plotly = TRUE, old_graph=FALSE, density=TRUE, ...) {
     cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
@@ -428,14 +428,32 @@ font-family: Verdana;}
     cat( "<br><div class = \"color\">>Moyenne et intervalle de confiance à ",100*(1-alpha),"% :",  
          round(mean,2),"[",round(mean+qnorm(alpha/2)*sd/sqrt(n),2),";",round(mean+qnorm(1-alpha/2)*sd/sqrt(n),2),"]</div><br>")
   }
-  if (graph) {
+  if (old_graph) {
     hist(vector, col="cornflowerblue", freq = FALSE, main = name, xlab = name, breaks = def_breaks, ylim = c(0,max(hist(vector, plot = F)$density, density(vector)$y)), ...)
     if (density) {
       lines(density(vector), col="red") ;
     }
   }
   if (plot_boxplot) {
-    boxplot(vector, main = name, ylab = "", col="cornflowerblue")
+    t = tibble(x = vector)
+    gg_box = ggplot(t, aes(x ="",y=x)) +
+    geom_violin(fill = "cornflowerblue") +
+    coord_flip() + #geom_boxplot(width=0.1) + 
+    ggtitle(name) + ylab("Valeur") + theme_bw() + xlab("")
+    print(ggplotly(gg_box))
+  }
+  if (plotly) {
+    t = tibble(x = vector)
+    gg = ggplot(t, aes(x)) +
+    geom_histogram(aes(y = stat(density)), fill = "cornflowerblue", binwidth = function(x) 2 * IQR(x) / (length(x)^(1/3))) +
+    ggtitle(name) + xlab("Valeur") + theme_bw() +
+    stat_function(
+        fun = dnorm, 
+        args = list(mean = mean(t$x), sd = sd(t$x)), 
+        lwd = 1, 
+        col = 'red'
+    )
+   print(ggplotly(gg))
   }
 }
 
