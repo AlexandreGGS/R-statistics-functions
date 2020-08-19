@@ -193,7 +193,9 @@ remove_outliers <- function(x, na.rm = TRUE, ...) {
 
 # BINAIRE
 
-desc_binaire_html <- function(vector, name="Variable", table=TRUE, ...) {
+
+
+desc_binaire_html <- function(vector, name="Variable", table=TRUE, old_graph = FALSE, plotly = TRUE, ...) {
 	  cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
@@ -232,8 +234,17 @@ font-family: Verdana;}
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
     print(knitr::kable(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
-  
-  pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
+  if(old_graph){
+  	pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
+  }
+  if(plotly){
+ 	df = vector %>% as_tibble() %>% group_by(value) %>% tally()
+ 	fig = df %>% plot_ly(labels = ~value, values = ~n)
+ 	fig %>% add_pie(hole = 0.6) %>%
+ 	layout(title = name,  showlegend = T,
+         	xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         	yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  }
 }
 
 
