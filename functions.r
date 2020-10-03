@@ -232,7 +232,7 @@ font-family: Verdana;}
     }
     cat("</div>")
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
-    print(knitr::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   if(old_graph){
   	pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
@@ -296,7 +296,7 @@ font-family: Verdana;}
       df_tmp$IC[df_tmp$modalites == une_modalite] = IC
     }
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
-    print(knitr::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   
   # graphique à l'ancienne
@@ -362,7 +362,7 @@ font-family: Verdana;}
                     "Maximum",
                     "Ecart type")
   names(df) = name
-  print(knitr::kbl(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))} ;
+  print(kableExtra::kbl(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))} ;
   
   if( table ) {
     temp <- as.data.frame(table(vector)) ;
@@ -387,7 +387,7 @@ font-family: Verdana;}
     }
     names(df_tmp)=c("Modalité", "Effectif","Proportion","IC95%")
     cat("<br><b><center>Détail des modalités</center></b><br>")
-    print(knitr::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_tmp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
     
   }
   if( mean_ci ) {
@@ -431,7 +431,7 @@ font-family: Verdana;}
                     "Maximum",
                     "Ecart type")
   names(df) = name
-  print(knitr::kbl(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+  print(kableExtra::kbl(df) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   if( mean_ci ) {
     sd <- sd(vector) ;
     mean <- mean(vector) ;
@@ -655,12 +655,12 @@ font-family: Verdana;}
     prop_table <-round(100*prop.table(table(y,x),2),2)  
     tableau_perc <- as.data.frame.matrix(prop_table)
     cat(paste0("<br><center><strong>Proportions de ", yname, " (lignes) par modalité de ",xname," (colonnes)</center></strong><br>"))
-    print(knitr::kbl(tableau_perc) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(tableau_perc) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   if (table) {
     tableau_eff <- as.data.frame.matrix(table(y,x))
     cat("<br><center><strong>Tableau des effectifs</center></strong><br>")
-    print(knitr::kbl(tableau_eff) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(tableau_eff) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   
   if (mosaic) {plot(table(x, y), xlab=xname, ylab=yname, main="Mosaicplot", col="cornflowerblue")} ;
@@ -757,7 +757,7 @@ font-family: Verdana;}
                                                            `Effectif` = n,
                                                            `Moyenne` = mean_quanti,
                                                            `IC95%` = ic)
-    print(knitr::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   } else if (method %in% c("wilcoxon", "kruskal")) {
     cat("<br><center><strong>Médianes avec intervalle inter-quartile [Q1;Q3] pour chaque modalité de la variable qualitative</center></strong><br>")
     df_temp = tibble(quali = NA,
@@ -781,7 +781,7 @@ font-family: Verdana;}
                                                            `Effectif` = n,
                                                            `Médiane` = med_quanti,
                                                            `Intervalle interquartile` = ic)
-    print(knitr::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
     
     cat("<br><center><strong>Moyennes avec IC95% pour chaque modalité de la variable qualitative</center></strong><br>")
     df_temp = tibble(quali = NA,
@@ -805,7 +805,7 @@ font-family: Verdana;}
                                                            `Effectif` = n,
                                                            `Moyenne` = mean_quanti,
                                                            `IC95%` = ic)
-    print(knitr::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
+    print(kableExtra::kbl(df_temp) %>% kable_styling(bootstrap_options = "striped", full_width = F))
   }
   
   if ( graph ) {
