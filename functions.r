@@ -1448,6 +1448,5 @@ myspread <- function(df, key, value) {
         unite(temp, !!keyq, variable) %>%
         spread(temp, value)
 }
-
 		       
 		 
