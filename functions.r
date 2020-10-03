@@ -330,8 +330,8 @@ y_lab_plot = "Effectifs"
 
 }
 #QUANTI_DISC
-desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, ...) {
-	  cat("<style>
+desc_quanti_disc_html = function(vector, name="Variable", mean_ci=TRUE, table=TRUE, Sum = T, sort="alpha", xlim=NULL, plotly = TRUE, old_plot = FALSE, ...) {
+  cat("<style>
 div.color { background-color:#ebf2f9;
 font-family: Verdana;}
 </style><br><div class = \"color\">")
@@ -394,10 +394,24 @@ font-family: Verdana;}
     sd <- sd(vector) ;
     mean <- mean(vector) ;
     n <- length(vector) ;
-    cat( "\n<br><div class = \"color\">>Moyenne et intervalle de confiance à 95% :",  
+    cat( "\n<br><div class = \"color\">Moyenne et intervalle de confiance à 95% :",  
          round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"]</div><br>")
   }
-  plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim) ;
+  if(plotly) {
+    t = as.data.frame(table(vector))
+    # t$vector = as.character(t$vector)
+    print(ggplotly(ggplot(t, aes(x=vector, y=Freq)) +
+      geom_segment( aes(x=vector, xend=vector, y=0, yend=Freq), color="black") +
+      geom_point( color="cornflowerblue", size=3) +
+      theme_light() +
+      theme(panel.grid.major.x = element_blank(),
+        panel.border = element_blank(),
+        axis.ticks.x = element_blank()) + xlab(name) + ylab("Effectif"))
+    )
+  }
+  if(old_plot) {
+    plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim)
+  }
 }
 
 
