@@ -397,21 +397,21 @@ font-family: Verdana;}
     cat( "\n<br><div class = \"color\">Moyenne et intervalle de confiance à 95% :",  
          round(mean,2),"[",round(mean-1.96*sd/sqrt(n),2),";",round(mean+1.96*sd/sqrt(n),2),"]</div><br>")
   }
-  if(plotly) {
-    t = as.data.frame(table(vector))
-    # t$vector = as.character(t$vector)
-    print(ggplotly(ggplot(t, aes(x=vector, y=Freq)) +
-      geom_segment( aes(x=vector, xend=vector, y=0, yend=Freq), color="black") +
-      geom_point( color="cornflowerblue", size=3) +
-      theme_light() +
-      theme(panel.grid.major.x = element_blank(),
-        panel.border = element_blank(),
-        axis.ticks.x = element_blank()) + xlab(name) + ylab("Effectif"))
-    )
-  }
   if(old_plot) {
     plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim)
   }
+  if(plotly) {
+    t = tibble(x = vector) %>% group_by(x) %>% tally() %>% mutate(x = as.character(x))
+    ggplotly(
+      ggplot(t, aes(x=x, y=n)) +
+        geom_segment( aes(x=x, xend=x, y=0, yend=n), color="black") +
+        geom_point( color="cornflowerblue", size=3) +
+        theme_light() +
+        theme(panel.grid.major.x = element_blank(),
+              panel.border = element_blank(),
+              axis.ticks.x = element_blank()) + xlab(name) + ylab("Effectif")
+    )
+   }
 }
 
 
