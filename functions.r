@@ -458,12 +458,7 @@ font-family: Verdana;}
     gg = ggplot(t, aes(x)) +
     geom_histogram(aes(y = stat(density)), fill = "cornflowerblue", binwidth = function(x) 2 * IQR(x) / (length(x)^(1/3))) +
     ggtitle(name) + xlab("Valeur") + theme_bw() +
-    stat_function(
-        fun = dnorm, 
-        args = list(mean = mean(t$x), sd = sd(t$x)), 
-        lwd = 1, 
-        col = 'red'
-    )
+    geom_line(stat="density", color = "red")
    ggplotly(gg)
   }
 }
