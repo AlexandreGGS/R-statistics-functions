@@ -401,7 +401,7 @@ font-family: Verdana;}
     plot(table(vector)/length(vector), xlab=name, ylab="proportion", col="cornflowerblue", xlim=xlim)
   }
   if(plotly) {
-    t = tibble(x = vector) %>% group_by(x) %>% tally() %>% mutate(x = as.character(x))
+    t = tibble(x = vector) %>% group_by(x) %>% tally() %>% mutate(x = as.factor(x))
     ggplotly(
       ggplot(t, aes(x=x, y=n)) +
         geom_segment( aes(x=x, xend=x, y=0, yend=n), color="black") +
