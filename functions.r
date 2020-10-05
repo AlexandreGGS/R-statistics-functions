@@ -402,7 +402,6 @@ font-family: Verdana;}
   }
   if(plotly) {
     t = tibble(x = vector) %>% group_by(x) %>% tally() 
-    # %>% mutate(x = as.numeric(x))
     ggplotly(
       ggplot(t, aes(x=x, y=n)) +
         geom_segment( aes(x=x, xend=x, y=0, yend=n), color="black") +
@@ -411,7 +410,7 @@ font-family: Verdana;}
         theme(panel.grid.major.x = element_blank(),
               panel.border = element_blank(),
               axis.ticks.x = element_blank()) + xlab(name) + ylab("Effectif") +
-        scale_x_continuous(breaks = seq(min(as.numeric(t$x),na.rm = T),max(as.numeric(t$x),na.rm = T),by = 1))
+        scale_x_continuous(breaks = as.numeric(names(table(t$x))))
     )
    }
 }
