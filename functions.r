@@ -1430,17 +1430,6 @@ theme_bw()
 }
 	
 	
-		       # Get_table (guillaume pressiat)
-		       
-get_table <- function(table, def_url = 'http://referime.aphp.fr/'){
-  library(magrittr)
-  def_url %>% 
-    paste0('v0.1/ref?table=', table) %>%
-    curl::curl() %>% 
-    jsonlite::fromJSON()
-}
-
-
 ################### Copier un dataframe directement dans le clipboard pour colelr dans excel
 copy_excel <- function(df, sep="\t", dec=",", max.size=(200*1000)){
     # Copy a data.frame to clipboard
