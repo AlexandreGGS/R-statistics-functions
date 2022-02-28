@@ -238,7 +238,7 @@ font-family: Verdana;}
   	pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
   }
   if(plotly){
- 	df = vector %>% as_tibble() %>% group_by(value) %>% tally() %>% arrange(desc(value)
+ 	df = vector %>% as_tibble() %>% group_by(value) %>% tally() %>% arrange(desc(value))
  	fig = df %>% plot_ly(labels = ~value, values = ~n)
  	fig %>% add_pie(hole = 0.6) %>%
  	layout(title = name,  showlegend = T,
