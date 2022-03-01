@@ -651,7 +651,7 @@ font-family: Verdana;}
     pval <- obj$"p.value" ;
   } else if( method=="fisher") {
     cat("Analyse bivariée : Test de Fisher sur deux variables qualitatives<br>")
-    obj <- fisher.test(table(x,y), workspace = 2e8) ;
+    obj <- fisher.test(table(x,y), workspace = 2e12) ;
     print(obj) ;
     pval <- obj$"p.value" ;
   } else {
