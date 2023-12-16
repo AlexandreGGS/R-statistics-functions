@@ -238,12 +238,12 @@ font-family: Verdana;}
   	pie(table(vector)/length(vector), main=name, col=c("white", "cornflowerblue")) ;
   }
   if(plotly){
- 	df = vector %>% as_tibble() %>% group_by(value) %>% tally() %>% arrange(desc(value)) %>% mutate(color = c("1", "2"))
- 	fig = df %>% plot_ly(labels = ~value, values = ~n)
- 	fig %>% add_pie(hole = 0.6) %>%
- 	layout(title = name,  showlegend = T,
-         	xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-         	yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+    df = vector %>% as_tibble() %>% group_by(value) %>% tally() %>% arrange(desc(value)) %>% mutate(colors = c("#2A2D6F", "#ACAFE8")) 
+    fig = df %>% plot_ly(labels = ~value, sort = F, values = ~n,marker = list(colors=~colors))
+    fig %>% add_pie(hole = 0.6) %>%
+      layout(title = name,  showlegend = T,
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
   }
 }
 
