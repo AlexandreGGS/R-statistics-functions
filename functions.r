@@ -676,7 +676,151 @@ font-family: Verdana;}
   if (mosaic) {plot(table(x, y), xlab=xname, ylab=yname, main="Mosaicplot", col="cornflowerblue")} ;
 }
 
+# VERSION 2 AVEC UN MOSAICPLOT PLUS JOLI				   
+bivarie_quali_quali_html_v2 <- function(
+  x, y,
+  xname = "Variable qualitative 1",
+  yname = "Variable qualitative 2",
+  method = "chisq",
+  prop.table = TRUE,
+  table = FALSE,
+  mosaic = TRUE,                 # <- si TRUE, on affiche le ggplot (ex-mosaic)
+  inner_max = 0.85,              # taille max (relative) du carré intérieur
+  text_size = 5,                 # taille du % au centre
+  axis_text_size = 18,           # taille du texte des axes
+  ...
+) {
+  # Dépendances pour le graphique
+  if (!requireNamespace("ggplot2", quietly = TRUE)) stop("Veuillez installer ggplot2")
+  if (!requireNamespace("dplyr", quietly = TRUE)) stop("Veuillez installer dplyr")
+  if (!requireNamespace("tidyr", quietly = TRUE)) stop("Veuillez installer tidyr")
+  if (!requireNamespace("viridis", quietly = TRUE)) stop("Veuillez installer viridis")
+  if (!requireNamespace("scales", quietly = TRUE)) stop("Veuillez installer scales")
+  # Tables jolies (optionnelles, déjà présentes dans ta version)
+  if ((prop.table || table) && !requireNamespace("kableExtra", quietly = TRUE)) {
+    warning("kableExtra n'est pas installé : les tableaux seront affichés bruts.")
+  }
 
+  # --- En-tête HTML identique à ta version
+  cat("<style>
+div.color { background-color:#ebf2f9;
+font-family: Verdana;}
+</style><br><div class = \"color\">")
+
+  nb_valide <- nrow(na.omit(data.frame(x, y)))
+  nb_manquant <- length(x) - nb_valide
+  cat(paste0(yname, " en fonction de ", xname, ".<br>"))
+  if (nb_manquant == 0) {
+    cat("Aucune valeur manquante.<br>")
+  } else {
+    cat("Valeurs manquantes : n=", nb_manquant, " soit ", 100 * nb_manquant / length(x), "%.<br>")
+  }
+  cat(paste0("Effectif analysé : ", nb_valide, ".<br>"))
+  cat("------------------------------------------------------------------------------------<br>")
+
+  # --- Tests (inchangés)
+  if (method == "chisq") {
+    cat("Analyse bivariée : Test du Chi 2 sur deux variables qualitatives<br>")
+    obj <- chisq.test(table(x, y))
+    print(obj)
+    pval <- obj[["p.value"]]
+  } else if (method == "fisher") {
+    cat("Analyse bivariée : Test de Fisher sur deux variables qualitatives<br>")
+    obj <- fisher.test(table(x, y), workspace = 200000000)
+    print(obj)
+    pval <- obj[["p.value"]]
+  } else {
+    cat("Nom de méthode incorrect :", method, "<br>")
+    return("Erreur !")
+  }
+  cat("<br>------------------------------------------------------------------------------------<br>")
+  cat("<strong>La p-value (petit p) de ce test = ", pval, "</strong>")
+  cat("<br>------------------------------------------------------------------------------------<br></div><br>")
+
+  # --- Tableaux (inchangés)
+  if (prop.table) {
+    prop_table <- round(100 * prop.table(table(y, x), 2), 2)
+    tableau_perc <- as.data.frame.matrix(prop_table)
+    cat(paste0("<br><center><strong>Proportions de ", yname, " (lignes) par modalité de ", xname, " (colonnes)</center></strong><br>"))
+    if (requireNamespace("kableExtra", quietly = TRUE)) {
+      print(kableExtra::kbl(tableau_perc) %>% kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE))
+    } else {
+      print(tableau_perc)
+    }
+  }
+  if (table) {
+    tableau_eff <- as.data.frame.matrix(table(y, x))
+    cat("<br><center><strong>Tableau des effectifs</center></strong><br>")
+    if (requireNamespace("kableExtra", quietly = TRUE)) {
+      print(kableExtra::kbl(tableau_eff) %>% kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE))
+    } else {
+      print(tableau_eff)
+    }
+  }
+
+  # --- VISU (remplace le mosaic plot)
+  if (isTRUE(mosaic)) {
+    # Préparation des données pour ggplot
+    suppressPackageStartupMessages({
+      library(dplyr); library(tidyr); library(ggplot2); library(viridis); library(scales)
+    })
+    d <- data.frame(x = x, y = y)
+
+    # On force toutes les combinaisons x*y et on calcule p = part de y au sein de chaque x (marge colonne, comme prop.table(..., 2))
+    tab <- d %>%
+      dplyr::count(x, y, name = "n") %>%
+      tidyr::complete(x, y, fill = list(n = 0)) %>%
+      dplyr::group_by(x) %>%
+      dplyr::mutate(p = n / sum(n)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(side = sqrt(p) * inner_max)
+
+    p_plot <-
+      ggplot2::ggplot(tab, ggplot2::aes(x = x, y = y)) +
+      # 1) Carré blanc fixe (grille)
+      ggplot2::geom_tile(fill = "white", color = "grey70", width = 0.98, height = 0.98) +
+      # 2) Carré intérieur proportionnel et coloré
+      ggplot2::geom_tile(ggplot2::aes(width = side, height = side, fill = p)) +
+      # 3) Texte en pourcentage (Century Gothic, bold, taille augmentée) + couleur adaptative
+      ggplot2::geom_text(
+        ggplot2::aes(
+          label = scales::percent(p, accuracy = 1),
+          color = p < 0.5        # texte blanc si fond sombre (valeurs faibles), noir sinon
+        ),
+        size = text_size,
+        fontface = "bold",
+        family = "Century Gothic"
+      ) +
+      # Palette viridis (option D) inversée pour avoir clair aux grandes valeurs
+      ggplot2::scale_fill_viridis_c(
+        option = "D",
+        direction = -1,
+        labels = scales::percent_format(accuracy = 1),
+        name = "Part"
+      ) +
+      # Couleur de texte : blanc / noir, pas de légende
+      ggplot2::scale_color_manual(values = c("white", "black"), guide = "none") +
+      # Titres axes (vides) + ratio carrés
+      ggplot2::labs(x = xname, y = yname) +
+      ggplot2::coord_fixed() +
+      # Thème + typographies (Century Gothic) et axes plus grands/gras
+      ggplot2::theme_minimal(base_size = 14) +
+      ggplot2::theme(
+        panel.grid = ggplot2::element_blank(),
+        axis.title.x = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.title.y = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.text.x  = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.text.y  = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        legend.title = ggplot2::element_text(family = "Century Gothic", face = "bold"),
+        legend.text  = ggplot2::element_text(family = "Century Gothic")
+      )
+
+    # Affichage
+    print(p_plot)
+  }
+}
+				   
+				   
 # Valeurs pour method : 
 # - student (2groupes, paramétrique) ; 
 # - anova (plus de 2 groupes, paramétrique) ;
@@ -1449,3 +1593,4 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
