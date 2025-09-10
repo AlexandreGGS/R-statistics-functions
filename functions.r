@@ -760,50 +760,50 @@ font-family: Verdana;}
 
   # --- VISU (remplace le mosaic plot)
   if (isTRUE(mosaic)) {
-    # Préparation des données pour ggplot
     suppressPackageStartupMessages({
       library(dplyr); library(tidyr); library(ggplot2); library(viridis); library(scales)
     })
-    d <- data.frame(x = x, y = y)
 
-    # On force toutes les combinaisons x*y et on calcule p = part de y au sein de chaque x (marge colonne, comme prop.table(..., 2))
+    # 1) On aligne le périmètre d'analyse avec les tableaux : on enlève les NA
+    d <- data.frame(x = x, y = y) %>% tidyr::drop_na()
+
+    # 2) Proportions EXACTEMENT comme tableau_perc : prop.table(table(y, x), 2)
+    prop_tbl <- prop.table(table(d$y, d$x), 2)  # lignes = y, colonnes = x
+    lab_df <- as.data.frame(as.table(prop_tbl)) %>%
+      dplyr::rename(y = Var1, x = Var2, p_exact = Freq) %>%
+      dplyr::mutate(
+        label = sprintf("%.2f%%", 100 * p_exact) # même arrondi (2 décimales)
+      )
+
+    # 3) Grille complète (toutes combinaisons) + jointure avec p_exact/label
     tab <- d %>%
       dplyr::count(x, y, name = "n") %>%
       tidyr::complete(x, y, fill = list(n = 0)) %>%
-      dplyr::group_by(x) %>%
-      dplyr::mutate(p = n / sum(n)) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(side = sqrt(p) * inner_max)
+      dplyr::left_join(lab_df, by = c("x", "y")) %>%
+      dplyr::mutate(
+        side = sqrt(p_exact) * inner_max   # surface ∝ p_exact
+      )
 
+    # 4) Plot
     p_plot <-
       ggplot2::ggplot(tab, ggplot2::aes(x = x, y = y)) +
-      # 1) Carré blanc fixe (grille)
+      # Carré blanc fixe
       ggplot2::geom_tile(fill = "white", color = "grey70", width = 0.98, height = 0.98) +
-      # 2) Carré intérieur proportionnel et coloré
-      ggplot2::geom_tile(ggplot2::aes(width = side, height = side, fill = p)) +
-      # 3) Texte en pourcentage (Century Gothic, bold, taille augmentée) + couleur adaptative
+      # Carré intérieur proportionnel et coloré
+      ggplot2::geom_tile(ggplot2::aes(width = side, height = side, fill = p_exact)) +
+      # Texte = EXACTEMENT les mêmes % que tableau_perc
       ggplot2::geom_text(
-        ggplot2::aes(
-          label = scales::percent(p, accuracy = 1),
-          color = p < 0.5        # texte blanc si fond sombre (valeurs faibles), noir sinon
-        ),
-        size = text_size,
-        fontface = "bold",
-        family = "Century Gothic"
+        ggplot2::aes(label = label, color = p_exact < 0.5),
+        size = text_size, fontface = "bold", family = "Century Gothic"
       ) +
-      # Palette viridis (option D) inversée pour avoir clair aux grandes valeurs
       ggplot2::scale_fill_viridis_c(
-        option = "D",
-        direction = -1,
+        option = "D", direction = -1,
         labels = scales::percent_format(accuracy = 1),
         name = "Part"
       ) +
-      # Couleur de texte : blanc / noir, pas de légende
       ggplot2::scale_color_manual(values = c("white", "black"), guide = "none") +
-      # Titres axes (vides) + ratio carrés
       ggplot2::labs(x = xname, y = yname) +
       ggplot2::coord_fixed() +
-      # Thème + typographies (Century Gothic) et axes plus grands/gras
       ggplot2::theme_minimal(base_size = 14) +
       ggplot2::theme(
         panel.grid = ggplot2::element_blank(),
@@ -815,7 +815,6 @@ font-family: Verdana;}
         legend.text  = ggplot2::element_text(family = "Century Gothic")
       )
 
-    # Affichage
     print(p_plot)
   }
 }
@@ -1593,4 +1592,5 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
 
