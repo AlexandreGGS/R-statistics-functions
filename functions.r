@@ -758,61 +758,54 @@ font-family: Verdana;}
     }
   }
 
-  # --- VISU (remplace le mosaic plot)
-  if (isTRUE(mosaic)) {
+ if (isTRUE(mosaic)) {
     suppressPackageStartupMessages({
       library(dplyr); library(tidyr); library(ggplot2); library(viridis); library(scales)
     })
 
-    # 1) On aligne le périmètre d'analyse avec les tableaux : on enlève les NA
     d <- data.frame(x = x, y = y) %>% tidyr::drop_na()
 
-    # 2) Proportions EXACTEMENT comme tableau_perc : prop.table(table(y, x), 2)
-    prop_tbl <- prop.table(table(d$y, d$x), 2)  # lignes = y, colonnes = x
+    # Proportions EXACTEMENT comme tableau_perc
+    prop_tbl <- prop.table(table(d$y, d$x), 2)
     lab_df <- as.data.frame(as.table(prop_tbl)) %>%
       dplyr::rename(y = Var1, x = Var2, p_exact = Freq) %>%
       dplyr::mutate(
-        label = sprintf("%d%%", 100 * p_exact) # même arrondi (2 décimales)
+        label = sprintf("%d%%", round(100 * p_exact, 0))  # arrondi à 0 décimale
       )
 
-    # 3) Grille complète (toutes combinaisons) + jointure avec p_exact/label
     tab <- d %>%
       dplyr::count(x, y, name = "n") %>%
       tidyr::complete(x, y, fill = list(n = 0)) %>%
       dplyr::left_join(lab_df, by = c("x", "y")) %>%
       dplyr::mutate(
-        side = sqrt(p_exact) * inner_max   # surface ∝ p_exact
+        side = sqrt(p_exact) * inner_max
       )
 
-    # 4) Plot
     p_plot <-
       ggplot2::ggplot(tab, ggplot2::aes(x = x, y = y)) +
-      # Carré blanc fixe
-      ggplot2::geom_tile(fill = "white", color = "grey70", width = 0.98, height = 0.98) +
-      # Carré intérieur proportionnel et coloré
-      ggplot2::geom_tile(ggplot2::aes(width = side, height = side, fill = p_exact)) +
-      # Texte = EXACTEMENT les mêmes % que tableau_perc
-      ggplot2::geom_text(
+      geom_tile(fill = "white", color = "grey70", width = 0.98, height = 0.98) +
+      geom_tile(ggplot2::aes(width = side, height = side, fill = p_exact)) +
+      geom_text(
         ggplot2::aes(label = label, color = p_exact < 0.5),
         size = text_size, fontface = "bold", family = "Century Gothic"
       ) +
-      ggplot2::scale_fill_viridis_c(
+      scale_fill_viridis_c(
         option = "D", direction = -1,
         labels = scales::percent_format(accuracy = 1),
         name = "Part"
       ) +
-      ggplot2::scale_color_manual(values = c("white", "black"), guide = "none") +
-      ggplot2::labs(x = xname, y = yname) +
-      ggplot2::coord_fixed() +
-      ggplot2::theme_minimal(base_size = 14) +
-      ggplot2::theme(
-        panel.grid = ggplot2::element_blank(),
-        axis.title.x = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
-        axis.title.y = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
-        axis.text.x  = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
-        axis.text.y  = ggplot2::element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
-        legend.title = ggplot2::element_text(family = "Century Gothic", face = "bold"),
-        legend.text  = ggplot2::element_text(family = "Century Gothic")
+      scale_color_manual(values = c("white", "black"), guide = "none") +
+      labs(x = xname, y = yname) +
+      coord_fixed() +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.grid = element_blank(),
+        axis.title.x = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.title.y = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.text.x  = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.text.y  = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        legend.title = element_text(family = "Century Gothic", face = "bold"),
+        legend.text  = element_text(family = "Century Gothic")
       )
 
     print(p_plot)
@@ -1592,6 +1585,7 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
 
 
 
