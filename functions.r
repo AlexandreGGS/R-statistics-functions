@@ -758,7 +758,8 @@ font-family: Verdana;}
     }
   }
 
- if (isTRUE(mosaic)) {
+   # --- VISU (remplace le mosaic plot)
+  if (isTRUE(mosaic)) {
     suppressPackageStartupMessages({
       library(dplyr); library(tidyr); library(ggplot2); library(viridis); library(scales)
     })
@@ -770,7 +771,7 @@ font-family: Verdana;}
     lab_df <- as.data.frame(as.table(prop_tbl)) %>%
       dplyr::rename(y = Var1, x = Var2, p_exact = Freq) %>%
       dplyr::mutate(
-        label = sprintf("%d%%", round(100 * p_exact, 0))  # arrondi à 0 décimale
+        label = paste0(round(100 * p_exact, 0), "%")  # arrondi à 0 décimale
       )
 
     tab <- d %>%
@@ -783,15 +784,19 @@ font-family: Verdana;}
 
     p_plot <-
       ggplot2::ggplot(tab, ggplot2::aes(x = x, y = y)) +
+      # Carré blanc fixe
       geom_tile(fill = "white", color = "grey70", width = 0.98, height = 0.98) +
-      geom_tile(ggplot2::aes(width = side, height = side, fill = p_exact)) +
+      # Carré intérieur proportionnel et coloré
+      geom_tile(aes(width = side, height = side, fill = p_exact)) +
+      # Texte = arrondi à 0 décimale
       geom_text(
-        ggplot2::aes(label = label, color = p_exact < 0.5),
+        aes(label = label, color = p_exact < 0.5),
         size = text_size, fontface = "bold", family = "Century Gothic"
       ) +
+      # Palette viridis avec légende arrondie à 0 décimale
       scale_fill_viridis_c(
         option = "D", direction = -1,
-        labels = scales::percent_format(accuracy = 1),
+        labels = function(x) paste0(round(100 * x, 0), "%"),
         name = "Part"
       ) +
       scale_color_manual(values = c("white", "black"), guide = "none") +
@@ -810,6 +815,7 @@ font-family: Verdana;}
 
     print(p_plot)
   }
+
 }
 				   
 				   
@@ -1585,6 +1591,7 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
 
 
 
