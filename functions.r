@@ -772,7 +772,7 @@ font-family: Verdana;}
     lab_df <- as.data.frame(as.table(prop_tbl)) %>%
       dplyr::rename(y = Var1, x = Var2, p_exact = Freq) %>%
       dplyr::mutate(
-        label = sprintf("%.2f%%", 100 * p_exact) # même arrondi (2 décimales)
+        label = sprintf("%d%%", 100 * p_exact) # même arrondi (2 décimales)
       )
 
     # 3) Grille complète (toutes combinaisons) + jointure avec p_exact/label
@@ -1592,5 +1592,6 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
 
 
