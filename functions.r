@@ -807,7 +807,7 @@ font-family: Verdana;}
         panel.grid = element_blank(),
         axis.title.x = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
         axis.title.y = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
-        axis.text.x  = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
+        axis.text.x  = element_text(family = "Century Gothic", face = "bold", size = axis_text_size, angle = 45),
         axis.text.y  = element_text(family = "Century Gothic", face = "bold", size = axis_text_size),
         legend.title = element_text(family = "Century Gothic", face = "bold"),
         legend.text  = element_text(family = "Century Gothic")
@@ -1591,6 +1591,7 @@ myspread <- function(df, key, value) {
 }
 		       
 		 
+
 
 
 
